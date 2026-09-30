@@ -1,4 +1,5 @@
 import { TopBar } from "@/components/TopBar";
+import { FilterableTable } from "@/components/FilterableTable";
 import { routingnms } from "@/lib/routingnms-client";
 
 export const dynamic = "force-dynamic";
@@ -33,49 +34,58 @@ export default async function EventsPage() {
             {error}
           </div>
         )}
-        <div className="glass-card overflow-hidden">
-          <table className="tbl">
-            <thead>
-              <tr>
-                <th>Time</th>
-                <th>Node</th>
-                <th>UEI</th>
-                <th>Message</th>
-              </tr>
-            </thead>
-            <tbody>
-              {events.length === 0 && !error && (
-                <tr>
-                  <td colSpan={4} className="text-center" style={{ color: "var(--text-muted)" }}>
-                    No events yet.
-                  </td>
-                </tr>
-              )}
-              {events.map((e) => {
-                const color = SEVERITY_COLOR[(e.severity ?? "").toUpperCase()] ?? "var(--status-unknown)";
-                return (
-                  <tr key={e.id}>
-                    <td style={{ color: "var(--text-muted)" }}>
-                      {e.time ? new Date(e.time).toLocaleString() : "—"}
-                    </td>
-                    <td style={{ color: "var(--text-primary)" }}>{e.nodeLabel ?? "—"}</td>
-                    <td>
-                      <span
-                        className="rounded px-1.5 py-0.5 text-[11px] font-mono"
-                        style={{ background: `${color}1f`, color }}
-                      >
-                        {e.uei?.split("/").pop() ?? e.uei ?? "—"}
-                      </span>
-                    </td>
-                    <td style={{ color: "var(--text-secondary)" }} className="max-w-lg truncate">
-                      {e.logMessage ?? "—"}
-                    </td>
+        <FilterableTable
+          rows={events}
+          searchFields={(e) => [e.nodeLabel, e.uei, e.logMessage, e.severity]}
+          placeholder="Filter by node, UEI, or message…"
+        >
+          {(filtered) => (
+            <div className="glass-card overflow-hidden">
+              <table className="tbl">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Node</th>
+                    <th>UEI</th>
+                    <th>Message</th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 && !error && (
+                    <tr>
+                      <td colSpan={4} className="text-center" style={{ color: "var(--text-muted)" }}>
+                        {events.length === 0 ? "No events yet." : "No events match that filter."}
+                      </td>
+                    </tr>
+                  )}
+                  {filtered.map((e) => {
+                    const color =
+                      SEVERITY_COLOR[(e.severity ?? "").toUpperCase()] ?? "var(--status-unknown)";
+                    return (
+                      <tr key={e.id}>
+                        <td style={{ color: "var(--text-muted)" }}>
+                          {e.time ? new Date(e.time).toLocaleString() : "—"}
+                        </td>
+                        <td style={{ color: "var(--text-primary)" }}>{e.nodeLabel ?? "—"}</td>
+                        <td>
+                          <span
+                            className="rounded px-1.5 py-0.5 text-[11px] font-mono"
+                            style={{ background: `${color}1f`, color }}
+                          >
+                            {e.uei?.split("/").pop() ?? e.uei ?? "—"}
+                          </span>
+                        </td>
+                        <td style={{ color: "var(--text-secondary)" }} className="max-w-lg truncate">
+                          {e.logMessage ?? "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </FilterableTable>
       </div>
     </>
   );
