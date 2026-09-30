@@ -163,6 +163,12 @@ export type OnmsBusinessService = {
   childEdges?: number;
 };
 
+export type OnmsCategory = {
+  name: string;
+  description?: string;
+  nodeCount: number;
+};
+
 export type OnmsReportDefinition = {
   id: string;
   displayName?: string;
@@ -563,6 +569,30 @@ export const routingnms = {
               : undefined,
         description: typeof r.description === "string" ? (r.description as string) : undefined,
         online: typeof r.online === "boolean" ? (r.online as boolean) : undefined,
+      }));
+    } catch {
+      return [];
+    }
+  },
+
+  // Surveillance categories — the tag-like grouping (e.g. "Routers",
+  // "Production") that feeds the classic Surveillance view and category-
+  // based dashboards. /categories lists definitions; each node's own
+  // membership comes back nested on some versions and as a separate
+  // per-category node list on others, so node counts are read from
+  // whichever shape is present.
+  async listCategories(): Promise<OnmsCategory[]> {
+    try {
+      const data = await requestV1<
+        { category?: Record<string, unknown>[] } | Record<string, unknown>[]
+      >(`/categories`);
+      const raw = Array.isArray(data) ? data : data.category ?? [];
+      return raw.map((c) => ({
+        name: String(c.name ?? "unnamed"),
+        description: typeof c.description === "string" ? (c.description as string) : undefined,
+        nodeCount: Array.isArray((c as Record<string, unknown>).node)
+          ? ((c as Record<string, unknown>).node as unknown[]).length
+          : Number(c.nodeCount ?? c["node-count"] ?? 0),
       }));
     } catch {
       return [];

@@ -19,6 +19,7 @@ import {
   Cable,
   Workflow,
   FileBarChart,
+  Tags,
   LogOut,
   type LucideIcon,
 } from "lucide-react";
@@ -40,6 +41,7 @@ const ICONS: Record<string, LucideIcon> = {
   Cable,
   Workflow,
   FileBarChart,
+  Tags,
 };
 
 export function Sidebar() {

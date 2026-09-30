@@ -37,6 +37,7 @@ export const NAV: NavGroup[] = [
       { label: "Events", href: "/events", icon: "Activity" },
       { label: "Outages", href: "/outages", icon: "PlugZap" },
       { label: "Notifications", href: "/notifications", icon: "Bell" },
+      { label: "Categories", href: "/categories", icon: "Tags" },
     ],
   },
   {
