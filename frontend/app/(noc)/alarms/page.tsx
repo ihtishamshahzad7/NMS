@@ -1,5 +1,6 @@
 import { TopBar } from "@/components/TopBar";
 import { StatusPill } from "@/components/StatusPill";
+import { FilterableTable } from "@/components/FilterableTable";
 import { routingnms } from "@/lib/routingnms-client";
 
 export const dynamic = "force-dynamic";
@@ -24,43 +25,51 @@ export default async function AlarmsPage() {
             {error}
           </div>
         )}
-        <div className="glass-card overflow-hidden">
-          <table className="tbl">
-            <thead>
-              <tr>
-                <th>Severity</th>
-                <th>Node</th>
-                <th>Message</th>
-                <th>Ack</th>
-                <th>Last Event</th>
-              </tr>
-            </thead>
-            <tbody>
-              {alarms.length === 0 && !error && (
-                <tr>
-                  <td colSpan={5} className="text-center" style={{ color: "var(--text-muted)" }}>
-                    No alarms — all clear.
-                  </td>
-                </tr>
-              )}
-              {alarms.map((a) => (
-                <tr key={a.id}>
-                  <td>
-                    <StatusPill severity={a.severityLabel} />
-                  </td>
-                  <td style={{ color: "var(--text-primary)" }}>{a.nodeLabel ?? "—"}</td>
-                  <td style={{ color: "var(--text-secondary)" }} className="max-w-lg truncate">
-                    {a.logMsg?.content ?? "—"}
-                  </td>
-                  <td style={{ color: "var(--text-muted)" }}>{a.ackUser ?? "Unacked"}</td>
-                  <td style={{ color: "var(--text-muted)" }}>
-                    {a.lastEventTime ? new Date(a.lastEventTime).toLocaleString() : "—"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <FilterableTable
+          rows={alarms}
+          searchFields={(a) => [a.nodeLabel, a.logMsg?.content, a.severityLabel, a.ackUser]}
+          placeholder="Filter by node, message, or severity…"
+        >
+          {(filtered) => (
+            <div className="glass-card overflow-hidden">
+              <table className="tbl">
+                <thead>
+                  <tr>
+                    <th>Severity</th>
+                    <th>Node</th>
+                    <th>Message</th>
+                    <th>Ack</th>
+                    <th>Last Event</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 && !error && (
+                    <tr>
+                      <td colSpan={5} className="text-center" style={{ color: "var(--text-muted)" }}>
+                        {alarms.length === 0 ? "No alarms — all clear." : "No alarms match that filter."}
+                      </td>
+                    </tr>
+                  )}
+                  {filtered.map((a) => (
+                    <tr key={a.id}>
+                      <td>
+                        <StatusPill severity={a.severityLabel} />
+                      </td>
+                      <td style={{ color: "var(--text-primary)" }}>{a.nodeLabel ?? "—"}</td>
+                      <td style={{ color: "var(--text-secondary)" }} className="max-w-lg truncate">
+                        {a.logMsg?.content ?? "—"}
+                      </td>
+                      <td style={{ color: "var(--text-muted)" }}>{a.ackUser ?? "Unacked"}</td>
+                      <td style={{ color: "var(--text-muted)" }}>
+                        {a.lastEventTime ? new Date(a.lastEventTime).toLocaleString() : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </FilterableTable>
       </div>
     </>
   );
