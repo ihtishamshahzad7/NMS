@@ -97,8 +97,14 @@ services:
     depends_on: [postgres]
     command: ["-s"]
     ports:
-      - "8980:8980"
-      - "8101:8101"
+      # Bound to localhost only — the raw backend console is an admin tool,
+      # not the public product. Only the RoutingNMS frontend (below) is
+      # reachable from the network. To check the backend yourself from this
+      # server: curl http://127.0.0.1:8980/opennms, or SSH-tunnel in.
+      - "127.0.0.1:8980:8980"
+      - "127.0.0.1:8101:8101"
+      # Trap/syslog receivers stay network-reachable — they need to receive
+      # real SNMP traps/syslog from monitored devices on the network.
       # 1162 is mapped to a non-standard host port — some boxes already have
       # something (snmptrapd, another agent) bound to the standard port.
       - "11620:1162/udp"
