@@ -38,6 +38,13 @@ fi
 
 mkdir -p "$STACK_DIR/opennms-etc-overlay"
 
+# Backend login-page branding overlay (logo, gradient background, support
+# email) — visual only, no Java/functional changes. Delivered via the
+# image's own general-purpose overlay mount (rsynced onto OPENNMS_HOME at
+# every container start), same mechanism as the datasource overlay above.
+rm -rf "$STACK_DIR/opennms-overlay"
+cp -r "$INSTALL_DIR/backend-branding-overlay" "$STACK_DIR/opennms-overlay"
+
 # --- 3. DB password: reuse if this is a re-run, else generate ----------
 if [ -f "$DATASOURCES_FILE" ]; then
   DB_PASSWORD="$(grep -A5 'name="opennms-admin"' "$DATASOURCES_FILE" | grep -o 'password="[^"]*"' | head -1 | cut -d'"' -f2)"
@@ -99,6 +106,7 @@ services:
     volumes:
       - routingnms-data:/opennms-data
       - ./opennms-etc-overlay:/opt/opennms-etc-overlay:ro
+      - ./opennms-overlay:/opt/opennms-overlay:ro
     networks: [routingnms-net]
 
   frontend:
