@@ -163,6 +163,14 @@ export type OnmsBusinessService = {
   childEdges?: number;
 };
 
+export type OnmsMinion = {
+  id: string;
+  label?: string;
+  location?: string;
+  lastUpdated?: string;
+  status?: string; // STARTED | STOPPED | UNRESPONSIVE, reported as a property map on some versions
+};
+
 export type OnmsCategory = {
   name: string;
   description?: string;
@@ -596,6 +604,104 @@ export const routingnms = {
       }));
     } catch {
       return [];
+    }
+  },
+
+  // Minions — distributed monitoring agents (Horizon's remote pollers).
+  // v2 /minions is the modern location for this; older setups without
+  // Minions configured will just get a 404/empty result, which we treat
+  // as "none deployed" rather than an error.
+  async listMinions(): Promise<OnmsMinion[]> {
+    try {
+      const data = await request<{ minion?: Record<string, unknown>[] } | Record<string, unknown>[]>(
+        `/minions`
+      );
+      const raw = Array.isArray(data) ? data : data.minion ?? [];
+      return raw.map((m) => {
+        const status = m.status ?? (m.properties as Record<string, unknown> | undefined)?.status;
+        return {
+          id: String(m.id ?? "unknown"),
+          label: typeof m.label === "string" ? (m.label as string) : undefined,
+          location: typeof m.location === "string" ? (m.location as string) : undefined,
+          lastUpdated:
+            typeof m.lastUpdated === "string"
+              ? (m.lastUpdated as string)
+              : typeof m["last-updated"] === "string"
+                ? (m["last-updated"] as string)
+                : undefined,
+          status: typeof status === "string" ? status : undefined,
+        };
+      });
+    } catch {
+      return [];
+    }
+  },
+
+  /** Single node's own record — the standard, stable v2 node-by-id
+   * endpoint. Used by the Node Detail page alongside its interfaces and
+   * asset record. */
+  async getNode(nodeId: number): Promise<OnmsNode | null> {
+    try {
+      const n = await request<Record<string, unknown>>(`/nodes/${nodeId}`);
+      return {
+        id: Number(n.id),
+        label: String(n.label ?? `Node ${nodeId}`),
+        foreignSource: typeof n.foreignSource === "string" ? n.foreignSource : undefined,
+        sysLocation: typeof n.location === "string" ? n.location : undefined,
+        createTime: typeof n.createTime === "string" ? n.createTime : undefined,
+      };
+    } catch {
+      return null;
+    }
+  },
+
+  /** IP/SNMP interfaces for one node — same shape as listInterfaces but
+   * scoped to a single node, for the detail page (avoids re-fetching every
+   * node's interfaces just to show one). */
+  async nodeInterfaces(nodeId: number): Promise<OnmsInterface[]> {
+    try {
+      const data = await requestV1<
+        { ipInterface?: Record<string, unknown>[] } | Record<string, unknown>[]
+      >(`/nodes/${nodeId}/ipinterfaces`);
+      const raw = Array.isArray(data) ? data : data.ipInterface ?? [];
+      return raw.map((i): OnmsInterface => {
+        const snmp = (i.snmpInterface ?? {}) as Record<string, unknown>;
+        return {
+          nodeId,
+          ipAddress: String(i.ipAddress ?? i["ip-address"] ?? "unknown"),
+          isPrimary: i.snmpPrimary === "P" || i["snmp-primary"] === "P" || i.isPrimary === true,
+          snmpIfDescr: typeof snmp.ifDescr === "string" ? (snmp.ifDescr as string) : undefined,
+          snmpIfAlias: typeof snmp.ifAlias === "string" ? (snmp.ifAlias as string) : undefined,
+          snmpIfOperStatus:
+            typeof snmp.ifOperStatus === "number" ? (snmp.ifOperStatus as number) : undefined,
+        };
+      });
+    } catch {
+      return [];
+    }
+  },
+
+  /** Asset record for one node — scoped version of listAssets. */
+  async nodeAsset(nodeId: number): Promise<OnmsAsset | null> {
+    try {
+      const asset = await requestV1<Record<string, unknown>>(`/nodes/${nodeId}/assetRecord`);
+      const str = (v: unknown) => (typeof v === "string" && v.trim() !== "" ? v : undefined);
+      return {
+        nodeId,
+        category: str(asset.category),
+        manufacturer: str(asset.manufacturer),
+        modelNumber: str(asset.modelNumber),
+        serialNumber: str(asset.serialNumber),
+        assetNumber: str(asset.assetNumber),
+        region: str(asset.region),
+        building: str(asset.building),
+        room: str(asset.room),
+        rack: str(asset.rack),
+        vendor: str(asset.vendor),
+        description: str(asset.description),
+      };
+    } catch {
+      return null;
     }
   },
 };

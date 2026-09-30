@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { TopBar } from "@/components/TopBar";
 import { routingnms } from "@/lib/routingnms-client";
 
@@ -43,7 +44,15 @@ export default async function NodesPage() {
               )}
               {nodes.map((n) => (
                 <tr key={n.id}>
-                  <td style={{ color: "var(--text-primary)" }}>{n.label}</td>
+                  <td>
+                    <Link
+                      href={`/nodes/${n.id}`}
+                      style={{ color: "var(--text-primary)" }}
+                      className="hover:underline"
+                    >
+                      {n.label}
+                    </Link>
+                  </td>
                   <td style={{ color: "var(--text-secondary)" }}>{n.foreignSource ?? "—"}</td>
                   <td style={{ color: "var(--text-secondary)" }}>{n.sysLocation ?? "—"}</td>
                   <td style={{ color: "var(--text-muted)" }}>
