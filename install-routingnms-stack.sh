@@ -83,7 +83,7 @@ services:
       - routingnms-pgdata:/var/lib/postgresql/data
     networks: [routingnms-net]
 
-  opennms:
+  routingnms-backend:
     image: opennms/horizon:latest
     container_name: routingnms-backend
     restart: unless-stopped
@@ -92,7 +92,9 @@ services:
     ports:
       - "8980:8980"
       - "8101:8101"
-      - "1162:1162/udp"
+      # 1162 is mapped to a non-standard host port — some boxes already have
+      # something (snmptrapd, another agent) bound to the standard port.
+      - "11620:1162/udp"
       - "10514:10514/udp"
     volumes:
       - routingnms-data:/opennms-data
@@ -104,11 +106,14 @@ services:
       context: ../frontend
     container_name: routingnms-frontend
     restart: unless-stopped
-    depends_on: [opennms]
+    depends_on: [routingnms-backend]
     ports:
-      - "80:3000"
+      # 8080, not 80 — many boxes already have Apache/nginx on 80 (e.g. a
+      # prior Cacti-based install). Once you're ready to fully cut over,
+      # stop whatever else owns port 80 and change this to "80:3000".
+      - "8080:3000"
     environment:
-      ROUTINGNMS_API_URL: "http://opennms:8980/opennms"
+      ROUTINGNMS_API_URL: "http://routingnms-backend:8980/opennms"
       ROUTINGNMS_API_USER: "admin"
       ROUTINGNMS_API_PASSWORD: "admin"
       NODE_ENV: "production"
@@ -132,14 +137,21 @@ echo "======================================================"
 echo " RoutingNMS stack starting."
 echo ""
 echo " New frontend (what your boss should look at):"
-echo "   http://${IP}/"
+echo "   http://${IP}:8080/"
 echo ""
 echo " Backend web console (unchanged OpenNMS UI, for comparison):"
 echo "   http://${IP}:8980/opennms   — login admin / admin, it will force a password change"
+echo "   (the URL path is /opennms — that's baked into the backend's own webapp,"
+echo "    not something this stack renames; only the untouched engine lives there)"
 echo ""
 echo " First boot runs full DB init and can take several minutes. Watch progress:"
-echo "   docker compose -f ${STACK_DIR}/docker-compose.yml logs -f opennms"
+echo "   docker compose -f ${STACK_DIR}/docker-compose.yml logs -f routingnms-backend"
 echo ""
 echo " Frontend login uses the SAME admin/admin credentials against the backend above —"
-echo " once you change the OpenNMS admin password, use the new one to log into the frontend too."
+echo " once you change the OpenNMS admin password, update ROUTINGNMS_API_PASSWORD in"
+echo " ${STACK_DIR}/docker-compose.yml and run 'docker compose up -d' again."
+echo ""
+echo " NOTE: if port 80 or 8080 was already taken on this box by a leftover process,"
+echo " this script does NOT auto-detect or kill it — check with 'ss -tlnp' and free it"
+echo " (or change the frontend port mapping above) before re-running."
 echo "======================================================"
