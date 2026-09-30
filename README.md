@@ -1,7 +1,9 @@
-[OpenNMS][]
+[RoutingNMS][]
 ===========
 
-[OpenNMS][] is an open-source network monitoring platform that helps you visualize and monitor everything on your local and distributed networks. OpenNMS offers comprehensive fault, performance, and traffic monitoring with alarm generation in one place. Highly customizable and scalable, OpenNMS integrates with your core business applications and workflows.
+[RoutingNMS][] is an open-source network monitoring platform that helps you visualize and monitor everything on your local and distributed networks. RoutingNMS offers comprehensive fault, performance, and traffic monitoring with alarm generation in one place. Highly customizable and scalable, RoutingNMS integrates with your core business applications and workflows.
+
+The backend is a proven, feature-complete Java monitoring engine (built on the OpenNMS Horizon core); `frontend/` is a modern React + Next.js UI built specifically for RoutingNMS on top of that engine's REST API.
 
 
 Features
@@ -21,7 +23,7 @@ Features
 
 * **Digital experience monitoring**
 
-	 Use the OpenNMS Minion to monitor a service’s latency and availability from different perspectives.
+	 Use the RoutingNMS Minion to monitor a service's latency and availability from different perspectives.
 
 * **Robust configuration**
 
@@ -31,22 +33,26 @@ Features
 
 	Scale through Sentinels for flow persistence, Minions for Flow, BMP, SNMP trap, and Syslog ingest, and embedded ActiveMQ to Kafka message brokers.
 
-* **Enterprise reporting and  visualization**
+* **Enterprise reporting and visualization**
 
 	Customizable dashboards that you can export as a PDF. Resource graphs, database reports, charts. Define and customize complex layered topologies to integrate topology maps into your service problem management workflow.
 
-Install OpenNMS
+* **Modern web UI**
+
+	A dedicated React/Next.js frontend (`frontend/`) — Dashboard, Nodes, Alarms, Events, Outages, Resource Graphs, Topology, and Provisioning — talking to the same backend over its REST API. See [frontend/README.md](frontend/README.md).
+
+Install RoutingNMS
 ==================
 
-For details on installing OpenNMS, see [Install OpenNMS][].
+For details on installing the backend engine, see [Install RoutingNMS][].
 
-TL;DR - If you just want to set up a simple non-production evaluation of OpenNMS Horizon on Linux, some basic install scripts are available at [opennms-forge/opennms-install](https://github.com/opennms-forge/opennms-install)
+TL;DR - If you just want to set up a simple non-production evaluation on Linux, some basic install scripts are available at [opennms-forge/opennms-install](https://github.com/opennms-forge/opennms-install)
 
-Build OpenNMS
+Build RoutingNMS
 ================
 
-For details on how to build OpenNMS, see [Build OpenNMS from source][].
+For details on how to build the backend from source, see [Build RoutingNMS from source][].
 
-[OpenNMS]:           http://www.opennms.com/
-[Build OpenNMS from source]:  docs/modules/development/pages/build-from-source.adoc
-[Install OpenNMS]:  docs/modules/deployment/pages/core/getting-started.adoc
+[RoutingNMS]:           http://www.opennms.com/
+[Build RoutingNMS from source]:  docs/modules/development/pages/build-from-source.adoc
+[Install RoutingNMS]:  docs/modules/deployment/pages/core/getting-started.adoc
