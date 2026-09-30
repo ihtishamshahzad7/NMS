@@ -32,6 +32,7 @@ export const NAV: NavGroup[] = [
     label: "Monitoring",
     items: [
       { label: "Nodes", href: "/nodes", icon: "Server" },
+      { label: "Interfaces", href: "/interfaces", icon: "Cable" },
       { label: "Alarms", href: "/alarms", icon: "AlertTriangle" },
       { label: "Events", href: "/events", icon: "Activity" },
       { label: "Outages", href: "/outages", icon: "PlugZap" },

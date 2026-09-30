@@ -155,6 +155,16 @@ export type OnmsGroup = {
   userCount: number;
 };
 
+export type OnmsInterface = {
+  nodeId: number;
+  nodeLabel?: string;
+  ipAddress: string;
+  isPrimary?: boolean;
+  snmpIfDescr?: string;
+  snmpIfAlias?: string;
+  snmpIfOperStatus?: number; // 1 = up, 2 = down
+};
+
 export type OnmsAsset = {
   nodeId: number;
   nodeLabel?: string;
@@ -419,6 +429,53 @@ export const routingnms = {
           (a) =>
             a.manufacturer || a.modelNumber || a.serialNumber || a.assetNumber || a.region || a.building
         );
+    } catch {
+      return [];
+    }
+  },
+
+  // IP/SNMP interfaces per node — the "Interfaces" tab on the classic node
+  // detail page, flattened across nodes into one list. Capped at
+  // `nodeLimit` nodes and fetched in parallel; any one node's failure
+  // (unsupported field, unreachable, etc.) is swallowed so the rest of the
+  // table still renders.
+  async listInterfaces(nodeLimit = 60): Promise<OnmsInterface[]> {
+    try {
+      const nodeData = await requestV1<{ node?: Record<string, unknown>[] } | Record<string, unknown>[]>(
+        `/nodes?limit=${nodeLimit}`
+      );
+      const nodes = Array.isArray(nodeData) ? nodeData : nodeData.node ?? [];
+
+      const perNode = await Promise.all(
+        nodes.map(async (n) => {
+          const nodeId = Number(n.id);
+          const nodeLabel = typeof n.label === "string" ? n.label : undefined;
+          try {
+            const data = await requestV1<
+              { ipInterface?: Record<string, unknown>[] } | Record<string, unknown>[]
+            >(`/nodes/${nodeId}/ipinterfaces`);
+            const raw = Array.isArray(data) ? data : data.ipInterface ?? [];
+            return raw.map((i): OnmsInterface => {
+              const snmp = (i.snmpInterface ?? {}) as Record<string, unknown>;
+              return {
+                nodeId,
+                nodeLabel,
+                ipAddress: String(i.ipAddress ?? i["ip-address"] ?? "unknown"),
+                isPrimary:
+                  i.snmpPrimary === "P" || i["snmp-primary"] === "P" || i.isPrimary === true,
+                snmpIfDescr: typeof snmp.ifDescr === "string" ? (snmp.ifDescr as string) : undefined,
+                snmpIfAlias: typeof snmp.ifAlias === "string" ? (snmp.ifAlias as string) : undefined,
+                snmpIfOperStatus:
+                  typeof snmp.ifOperStatus === "number" ? (snmp.ifOperStatus as number) : undefined,
+              };
+            });
+          } catch {
+            return [];
+          }
+        })
+      );
+
+      return perNode.flat();
     } catch {
       return [];
     }
