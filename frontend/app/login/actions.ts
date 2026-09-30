@@ -42,7 +42,14 @@ export async function login(
   store.set(SESSION_COOKIE, username, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    // This deployment is served over plain HTTP on the internal LAN (no
+    // TLS termination in front of it) — a `Secure` cookie is silently
+    // dropped by the browser over HTTP, which caused the very next
+    // navigation to look logged-out even though login itself "succeeded".
+    // Only mark it Secure if this instance is explicitly known to sit
+    // behind HTTPS (set ROUTINGNMS_HTTPS=1 once a reverse proxy/TLS is
+    // added in front of it).
+    secure: process.env.ROUTINGNMS_HTTPS === "1",
     path: "/",
     maxAge: 60 * 60 * 12, // 12h
   });
