@@ -44,6 +44,10 @@ export const NAV: NavGroup[] = [
     items: [{ label: "Resource Graphs", href: "/resources", icon: "LineChart" }],
   },
   {
+    label: "Service Health",
+    items: [{ label: "Business Services", href: "/business-services", icon: "Workflow" }],
+  },
+  {
     label: "Network",
     items: [
       { label: "Topology", href: "/topology", icon: "Share2" },

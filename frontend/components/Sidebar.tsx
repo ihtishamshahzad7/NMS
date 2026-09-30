@@ -17,6 +17,7 @@ import {
   Users,
   Boxes,
   Cable,
+  Workflow,
   LogOut,
   type LucideIcon,
 } from "lucide-react";
@@ -36,6 +37,7 @@ const ICONS: Record<string, LucideIcon> = {
   Users,
   Boxes,
   Cable,
+  Workflow,
 };
 
 export function Sidebar() {

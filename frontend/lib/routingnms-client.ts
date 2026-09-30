@@ -155,6 +155,14 @@ export type OnmsGroup = {
   userCount: number;
 };
 
+export type OnmsBusinessService = {
+  id: number;
+  name: string;
+  operationalStatus?: string; // NORMAL | WARNING | MINOR | MAJOR | CRITICAL | INDETERMINATE
+  reductionKeys?: number;
+  childEdges?: number;
+};
+
 export type OnmsInterface = {
   nodeId: number;
   nodeLabel?: string;
@@ -478,6 +486,51 @@ export const routingnms = {
       return perNode.flat();
     } catch {
       return [];
+    }
+  },
+
+  // Business Service Monitoring — composite "service health" rollups built
+  // from alarms/IP services. Newer Horizon versions serve this from v2;
+  // older ones only had it under v1. We try v2 first and fall back to v1
+  // so this keeps working across the version spread, same defensive
+  // approach as everything else that touches a less-stable endpoint.
+  async listBusinessServices(): Promise<OnmsBusinessService[]> {
+    const parse = (raw: Record<string, unknown>[]): OnmsBusinessService[] =>
+      raw.map((b) => {
+        const status = b["operational-status"] ?? b.operationalStatus;
+        const statusLabel =
+          typeof status === "string"
+            ? status
+            : typeof (status as Record<string, unknown>)?.label === "string"
+              ? ((status as Record<string, unknown>).label as string)
+              : undefined;
+        return {
+          id: Number(b.id),
+          name: String(b.name ?? "Unnamed service"),
+          operationalStatus: statusLabel,
+          reductionKeys: Array.isArray(b["reduction-keys"])
+            ? (b["reduction-keys"] as unknown[]).length
+            : undefined,
+          childEdges: Array.isArray(b.edges) ? (b.edges as unknown[]).length : undefined,
+        };
+      });
+
+    try {
+      const data = await request<{ businessService?: Record<string, unknown>[] } | Record<string, unknown>[]>(
+        `/business-services`
+      );
+      const raw = Array.isArray(data) ? data : data.businessService ?? [];
+      return parse(raw);
+    } catch {
+      try {
+        const data = await requestV1<
+          { "business-service"?: Record<string, unknown>[] } | Record<string, unknown>[]
+        >(`/business-services`);
+        const raw = Array.isArray(data) ? data : data["business-service"] ?? [];
+        return parse(raw);
+      } catch {
+        return [];
+      }
     }
   },
 };
