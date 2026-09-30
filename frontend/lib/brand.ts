@@ -18,10 +18,10 @@ export type NavGroup = {
 
 /**
  * Sidebar structure. Each entry maps to a screen we're rebuilding.
- * Grouped to mirror OpenNMS's own domains so nothing users rely on today
+ * Grouped to mirror RoutingNMS's own domains so nothing users rely on today
  * goes missing — we are only re-skinning, not removing capability.
  * Add a group/item here as each backend area gets its new UI; the old
- * OpenNMS web UI stays the fallback for anything not yet listed.
+ * RoutingNMS web UI stays the fallback for anything not yet listed.
  */
 export const NAV: NavGroup[] = [
   {

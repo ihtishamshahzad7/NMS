@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useTransition } from "react";
 import {
   LayoutDashboard,
   Server,
@@ -12,9 +13,11 @@ import {
   LineChart,
   Share2,
   PlusSquare,
+  LogOut,
   type LucideIcon,
 } from "lucide-react";
 import { BRAND, NAV } from "@/lib/brand";
+import { logout } from "@/app/login/actions";
 
 const ICONS: Record<string, LucideIcon> = {
   LayoutDashboard,
@@ -29,6 +32,16 @@ const ICONS: Record<string, LucideIcon> = {
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+
+  function handleLogout() {
+    startTransition(async () => {
+      await logout();
+      router.push("/login");
+      router.refresh();
+    });
+  }
 
   return (
     <aside
@@ -93,4 +106,21 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div classNa
+      <div className="mt-auto flex flex-col gap-3 px-2">
+        <button
+          type="button"
+          onClick={handleLogout}
+          disabled={pending}
+          className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors disabled:opacity-60"
+          style={{ color: "var(--text-secondary)" }}
+        >
+          <LogOut size={16} strokeWidth={2} />
+          {pending ? "Signing out…" : "Sign out"}
+        </button>
+        <div className="text-[11px]" style={{ color: "var(--text-muted)" }}>
+          {BRAND.name} · All systems monitored
+        </div>
+      </div>
+    </aside>
+  );
+}

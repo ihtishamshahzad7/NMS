@@ -1,18 +1,18 @@
 import { TopBar } from "@/components/TopBar";
 import { StatusPill } from "@/components/StatusPill";
-import { opennms } from "@/lib/opennms-client";
+import { routingnms } from "@/lib/routingnms-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function AlarmsPage() {
-  let alarms: Awaited<ReturnType<typeof opennms.listAlarms>>["alarms"] = [];
+  let alarms: Awaited<ReturnType<typeof routingnms.listAlarms>>["alarms"] = [];
   let error: string | null = null;
 
   try {
-    const res = await opennms.listAlarms(200);
+    const res = await routingnms.listAlarms(200);
     alarms = res.alarms;
   } catch {
-    error = "Couldn't reach the OpenNMS API. Check OPENNMS_BASE_URL / credentials.";
+    error = "Couldn't reach the RoutingNMS API. Check ROUTINGNMS_API_URL / credentials.";
   }
 
   return (

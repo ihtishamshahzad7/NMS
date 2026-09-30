@@ -1,17 +1,17 @@
 import { TopBar } from "@/components/TopBar";
-import { opennms } from "@/lib/opennms-client";
+import { routingnms } from "@/lib/routingnms-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function NodesPage() {
-  let nodes: Awaited<ReturnType<typeof opennms.listNodes>>["nodes"] = [];
+  let nodes: Awaited<ReturnType<typeof routingnms.listNodes>>["nodes"] = [];
   let error: string | null = null;
 
   try {
-    const res = await opennms.listNodes(200);
+    const res = await routingnms.listNodes(200);
     nodes = res.nodes;
   } catch {
-    error = "Couldn't reach the OpenNMS API. Check OPENNMS_BASE_URL / credentials.";
+    error = "Couldn't reach the RoutingNMS API. Check ROUTINGNMS_API_URL / credentials.";
   }
 
   return (

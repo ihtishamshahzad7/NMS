@@ -1,12 +1,12 @@
 # RoutingNMS UI
 
-A new, modern React/Next.js frontend for the OpenNMS backend in `../R-NMS`.
-**The OpenNMS Java monitoring engine is completely untouched** — this app
+A new, modern React/Next.js frontend for the RoutingNMS backend in `../R-NMS`.
+**The RoutingNMS Java monitoring engine is completely untouched** — this app
 only talks to its existing REST v2 API. Nothing was deleted or modified in
 the backend.
 
 ## Why this exists
-The old OpenNMS web UI (Vaadin/JSP) works but looks dated. This project
+The old RoutingNMS web UI (Vaadin/JSP) works but looks dated. This project
 replaces the UI only, screen by screen, without touching a single line of
 the monitoring/polling/alerting engine underneath.
 
@@ -20,13 +20,13 @@ Change those two files and the whole app re-skins. No component hardcodes
 
 ## Running it
 1. `npm install`
-2. Copy `.env.example` to `.env.local` and point it at your real OpenNMS
+2. Copy `.env.example` to `.env.local` and point it at your real RoutingNMS
    instance (base URL + a user with API access — the same credentials
    the classic web UI uses).
 3. `npm run dev` — opens on http://localhost:3000, redirects to
    `/dashboard`.
 
-If OpenNMS isn't reachable yet, every screen still renders (empty state +
+If RoutingNMS isn't reachable yet, every screen still renders (empty state +
 a warning banner) instead of crashing — safe to preview before a backend
 is wired up.
 
@@ -42,7 +42,7 @@ is wired up.
 - `/provisioning` — discovery/import UI
 
 Each new screen follows the same recipe: add a nav entry in
-`lib/brand.ts`, add API calls to `lib/opennms-client.ts` if needed, build
+`lib/brand.ts`, add API calls to `lib/routingnms-client.ts` if needed, build
 the page under `app/(noc)/<name>/page.tsx` reusing `glass-card`/`tbl`/
 `StatusPill` so every screen stays visually consistent automatically.
 

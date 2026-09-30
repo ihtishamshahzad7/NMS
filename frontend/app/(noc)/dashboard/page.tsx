@@ -1,17 +1,17 @@
 import { TopBar } from "@/components/TopBar";
 import { StatCard } from "@/components/StatCard";
 import { StatusPill } from "@/components/StatusPill";
-import { opennms } from "@/lib/opennms-client";
+import { routingnms } from "@/lib/routingnms-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   // Each call is independent and fails softly — one slow/unavailable
-  // OpenNMS endpoint shouldn't blank the whole dashboard.
+  // RoutingNMS endpoint shouldn't blank the whole dashboard.
   const [nodesRes, alarmsRes, outagesRes] = await Promise.allSettled([
-    opennms.listNodes(1),
-    opennms.listAlarms(8),
-    opennms.listOutages(1),
+    routingnms.listNodes(1),
+    routingnms.listAlarms(8),
+    routingnms.listOutages(1),
   ]);
 
   const nodeCount = nodesRes.status === "fulfilled" ? nodesRes.value.count : "—";
@@ -29,8 +29,8 @@ export default async function DashboardPage() {
             className="glass-card p-4 text-sm"
             style={{ color: "var(--status-warning)" }}
           >
-            Couldn&apos;t reach the OpenNMS API yet. Set OPENNMS_BASE_URL / OPENNMS_USER /
-            OPENNMS_PASSWORD in .env.local and point it at a running instance — the layout
+            Couldn&apos;t reach the RoutingNMS API yet. Set ROUTINGNMS_API_URL / ROUTINGNMS_API_USER /
+            ROUTINGNMS_API_PASSWORD in .env.local and point it at a running instance — the layout
             below will populate as soon as it connects.
           </div>
         )}
@@ -47,7 +47,7 @@ export default async function DashboardPage() {
             value={outageCount}
             accentColor={Number(outageCount) > 0 ? "var(--status-down)" : undefined}
           />
-          <StatCard label="Engine" value="OpenNMS" />
+          <StatCard label="Platform" value="Operational" accentColor="var(--status-up)" />
         </div>
 
         <div className="glass-card overflow-hidden">
