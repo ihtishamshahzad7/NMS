@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # RoutingNMS one-shot installer
-# Brings up: Postgres + OpenNMS backend (official image, untouched) +
-# the RoutingNMS Next.js frontend, all wired together with Docker Compose.
+# Brings up: Postgres + the RoutingNMS backend (the stock monitoring engine
+# image, unmodified) + the RoutingNMS Next.js frontend, all wired together
+# with Docker Compose.
 #
 # Usage (on a fresh Ubuntu box, as root or with sudo):
 #   curl -fsSL https://raw.githubusercontent.com/ihtishamshahzad7/NMS/main/install-routingnms-stack.sh | sudo bash
@@ -14,9 +15,26 @@ set -euo pipefail
 REPO_URL="https://github.com/ihtishamshahzad7/NMS.git"
 INSTALL_DIR="/opt/routingnms-app"
 STACK_DIR="$INSTALL_DIR/deploy-stack"
-DATASOURCES_FILE="$STACK_DIR/opennms-etc-overlay/opennms-datasources.xml"
+ETC_OVERLAY_DIR="$STACK_DIR/routingnms-etc-overlay"
+BRANDING_OVERLAY_DIR="$STACK_DIR/routingnms-branding-overlay"
+# Filename itself is fixed — the backend's own config loader looks for
+# exactly this name once it's rsynced into its etc/ directory. Renaming it
+# would just make the backend ignore the overlay and fall back to defaults.
+DATASOURCES_FILE="$ETC_OVERLAY_DIR/opennms-datasources.xml"
 
 echo "== RoutingNMS one-shot installer =="
+
+# --- 0. Clean install (optional) -------------------------------------------
+# Set ROUTINGNMS_CLEAN=1 to wipe any previous install (containers, volumes —
+# meaning the database too — and the old checkout) before reinstalling fresh.
+# Leave unset for a normal update-in-place re-run.
+if [ "${ROUTINGNMS_CLEAN:-0}" = "1" ]; then
+  echo "-- Clean install requested: removing previous stack, data, and checkout --"
+  if [ -f "$STACK_DIR/docker-compose.yml" ]; then
+    (cd "$STACK_DIR" && docker compose down -v --remove-orphans) || true
+  fi
+  rm -rf "$INSTALL_DIR"
+fi
 
 # --- 1. Docker -------------------------------------------------------------
 if ! command -v docker >/dev/null 2>&1; then
@@ -36,14 +54,16 @@ else
   git clone "$REPO_URL" "$INSTALL_DIR"
 fi
 
-mkdir -p "$STACK_DIR/opennms-etc-overlay"
+mkdir -p "$ETC_OVERLAY_DIR"
 
 # Backend login-page branding overlay (logo, gradient background, support
 # email) — visual only, no Java/functional changes. Delivered via the
-# image's own general-purpose overlay mount (rsynced onto OPENNMS_HOME at
-# every container start), same mechanism as the datasource overlay above.
-rm -rf "$STACK_DIR/opennms-overlay"
-cp -r "$INSTALL_DIR/backend-branding-overlay" "$STACK_DIR/opennms-overlay"
+# backend image's own general-purpose overlay mount (rsynced onto its home
+# directory at every container start), same mechanism as the datasource
+# overlay above. Our own folder names here say "routingnms"; only the
+# container-side mount point is fixed by the vendor image, not this script.
+rm -rf "$BRANDING_OVERLAY_DIR"
+cp -r "$INSTALL_DIR/backend-branding-overlay" "$BRANDING_OVERLAY_DIR"
 
 # --- 3. DB password: reuse if this is a re-run, else generate ----------
 if [ -f "$DATASOURCES_FILE" ]; then
@@ -111,8 +131,11 @@ services:
       - "10514:10514/udp"
     volumes:
       - routingnms-data:/opennms-data
-      - ./opennms-etc-overlay:/opt/opennms-etc-overlay:ro
-      - ./opennms-overlay:/opt/opennms-overlay:ro
+      # Right-hand side is the backend container's own fixed mount point
+      # (set by the upstream image's entrypoint, not by us) — only the
+      # host-side folder name is ours to name, and it says "routingnms".
+      - ./routingnms-etc-overlay:/opt/opennms-etc-overlay:ro
+      - ./routingnms-branding-overlay:/opt/opennms-overlay:ro
     networks: [routingnms-net]
 
   frontend:
@@ -153,16 +176,17 @@ echo ""
 echo " New frontend (what your boss should look at):"
 echo "   http://${IP}:8080/"
 echo ""
-echo " Backend web console (unchanged OpenNMS UI, for comparison):"
+echo " Backend engine console (stock UI, for comparison — not the branded product):"
 echo "   http://${IP}:8980/opennms   — login admin / admin, it will force a password change"
-echo "   (the URL path is /opennms — that's baked into the backend's own webapp,"
-echo "    not something this stack renames; only the untouched engine lives there)"
+echo "   (the /opennms path and its look are fixed by the backend engine's own"
+echo "    packaged webapp — this stack doesn't touch that engine's internals,"
+echo "    only fronts it with the RoutingNMS frontend above and a branded login page)"
 echo ""
 echo " First boot runs full DB init and can take several minutes. Watch progress:"
 echo "   docker compose -f ${STACK_DIR}/docker-compose.yml logs -f routingnms-backend"
 echo ""
 echo " Frontend login uses the SAME admin/admin credentials against the backend above —"
-echo " once you change the OpenNMS admin password, update ROUTINGNMS_API_PASSWORD in"
+echo " once you change that backend admin password, update ROUTINGNMS_API_PASSWORD in"
 echo " ${STACK_DIR}/docker-compose.yml and run 'docker compose up -d' again."
 echo ""
 echo " NOTE: if port 80 or 8080 was already taken on this box by a leftover process,"
