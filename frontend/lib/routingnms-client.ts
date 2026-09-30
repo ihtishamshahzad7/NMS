@@ -163,6 +163,13 @@ export type OnmsBusinessService = {
   childEdges?: number;
 };
 
+export type OnmsReportDefinition = {
+  id: string;
+  displayName?: string;
+  description?: string;
+  online?: boolean;
+};
+
 export type OnmsInterface = {
   nodeId: number;
   nodeLabel?: string;
@@ -531,6 +538,34 @@ export const routingnms = {
       } catch {
         return [];
       }
+    }
+  },
+
+  // Catalog of available report definitions (the "Reports" tab of the
+  // classic console) — the Jasper/BIRT report engine's own list, read via
+  // the reports REST resource. This is the report CATALOG only: generating
+  // and downloading an actual rendered report is a separate, multi-step
+  // REST flow (trigger a run, poll status, fetch the output) that we're
+  // not wiring up yet — listing what's available is the useful first step.
+  async listReportDefinitions(): Promise<OnmsReportDefinition[]> {
+    try {
+      const data = await requestV1<Record<string, unknown>[] | { report?: Record<string, unknown>[] }>(
+        `/reports/list`
+      );
+      const raw = Array.isArray(data) ? data : data.report ?? [];
+      return raw.map((r) => ({
+        id: String(r.id ?? r.reportId ?? "unknown"),
+        displayName:
+          typeof r.displayName === "string"
+            ? r.displayName
+            : typeof r["display-name"] === "string"
+              ? (r["display-name"] as string)
+              : undefined,
+        description: typeof r.description === "string" ? (r.description as string) : undefined,
+        online: typeof r.online === "boolean" ? (r.online as boolean) : undefined,
+      }));
+    } catch {
+      return [];
     }
   },
 };
