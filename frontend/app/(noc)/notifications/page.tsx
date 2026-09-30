@@ -1,5 +1,6 @@
 import { TopBar } from "@/components/TopBar";
 import { FilterableTable } from "@/components/FilterableTable";
+import { NotificationRowAction } from "@/components/NotificationRowAction";
 import { routingnms } from "@/lib/routingnms-client";
 
 export const dynamic = "force-dynamic";
@@ -57,12 +58,13 @@ export default async function NotificationsPage() {
                   <th>Subject</th>
                   <th>Message</th>
                   <th>Sent</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
                 {outstanding.length === 0 && !error && (
                   <tr>
-                    <td colSpan={4} className="text-center" style={{ color: "var(--text-muted)" }}>
+                    <td colSpan={5} className="text-center" style={{ color: "var(--text-muted)" }}>
                       Nothing outstanding — no unacknowledged notifications.
                     </td>
                   </tr>
@@ -74,6 +76,9 @@ export default async function NotificationsPage() {
                     <td style={{ color: "var(--text-secondary)" }}>{n.textMsg ?? "—"}</td>
                     <td style={{ color: "var(--text-muted)" }}>
                       {n.pageTime ? new Date(n.pageTime).toLocaleString() : "—"}
+                    </td>
+                    <td>
+                      <NotificationRowAction notificationId={n.id} />
                     </td>
                   </tr>
                 ))}

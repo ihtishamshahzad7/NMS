@@ -1,6 +1,7 @@
 import { TopBar } from "@/components/TopBar";
 import { StatusPill } from "@/components/StatusPill";
 import { FilterableTable } from "@/components/FilterableTable";
+import { AlarmRowActions } from "@/components/AlarmRowActions";
 import { routingnms } from "@/lib/routingnms-client";
 
 export const dynamic = "force-dynamic";
@@ -39,12 +40,13 @@ export default async function AlarmsPage() {
                   <th>Message</th>
                   <th>Ack</th>
                   <th>Last Event</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
                 {alarms.length === 0 && !error && (
                   <tr>
-                    <td colSpan={5} className="text-center" style={{ color: "var(--text-muted)" }}>
+                    <td colSpan={6} className="text-center" style={{ color: "var(--text-muted)" }}>
                       No alarms — all clear.
                     </td>
                   </tr>
@@ -61,6 +63,9 @@ export default async function AlarmsPage() {
                     <td style={{ color: "var(--text-muted)" }}>{a.ackUser ?? "Unacked"}</td>
                     <td style={{ color: "var(--text-muted)" }}>
                       {a.lastEventTime ? new Date(a.lastEventTime).toLocaleString() : "—"}
+                    </td>
+                    <td>
+                      <AlarmRowActions alarmId={a.id} acked={Boolean(a.ackUser)} />
                     </td>
                   </tr>
                 ))}

@@ -53,6 +53,7 @@ export const NAV: NavGroup[] = [
     items: [
       { label: "Topology", href: "/topology", icon: "Share2" },
       { label: "Provisioning", href: "/provisioning", icon: "PlusSquare" },
+      { label: "Distributed Monitoring", href: "/minions", icon: "Radio" },
     ],
   },
   {

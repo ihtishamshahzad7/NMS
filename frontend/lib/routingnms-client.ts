@@ -808,4 +808,30 @@ export const routingnms = {
       return null;
     }
   },
+
+  // ---- Alarm actions (write) -----------------------------------------
+  // These mirror exactly what the classic Vaadin alarm list's Ack/Clear/
+  // Escalate buttons call under the hood — the v1 REST alarm resource's
+  // query-param PUT convention, stable across RoutingNMS/Horizon versions.
+  // No response body is expected back (204/200 empty), which requestV1
+  // already handles fine.
+
+  async acknowledgeAlarm(id: number, ack: boolean): Promise<void> {
+    await requestV1<void>(`/alarms/${id}?ack=${ack}`, { method: "PUT" });
+  },
+
+  async clearAlarm(id: number): Promise<void> {
+    await requestV1<void>(`/alarms/${id}?clear=true`, { method: "PUT" });
+  },
+
+  async escalateAlarm(id: number): Promise<void> {
+    await requestV1<void>(`/alarms/${id}?escalate=true`, { method: "PUT" });
+  },
+
+  // ---- Notification actions (write) ----------------------------------
+  // Same convention as alarms — marks a notification responded-to, the
+  // same action the classic UI's "Acknowledge" link on a notice performs.
+  async acknowledgeNotification(id: number): Promise<void> {
+    await requestV1<void>(`/notifications/${id}?ack=true`, { method: "PUT" });
+  },
 };
