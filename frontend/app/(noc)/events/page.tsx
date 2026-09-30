@@ -25,6 +25,10 @@ export default async function EventsPage() {
     error = "Couldn't reach the RoutingNMS API. Check ROUTINGNMS_API_URL / credentials.";
   }
 
+  const searchIndex = events.map((e) =>
+    [e.nodeLabel, e.uei, e.logMessage, e.severity].filter(Boolean).join(" ").toLowerCase()
+  );
+
   return (
     <>
       <TopBar title="Events" />
@@ -34,57 +38,51 @@ export default async function EventsPage() {
             {error}
           </div>
         )}
-        <FilterableTable
-          rows={events}
-          searchFields={(e) => [e.nodeLabel, e.uei, e.logMessage, e.severity]}
-          placeholder="Filter by node, UEI, or message…"
-        >
-          {(filtered) => (
-            <div className="glass-card overflow-hidden">
-              <table className="tbl">
-                <thead>
+        <FilterableTable searchIndex={searchIndex} placeholder="Filter by node, UEI, or message…">
+          <div className="glass-card overflow-hidden">
+            <table className="tbl">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Node</th>
+                  <th>UEI</th>
+                  <th>Message</th>
+                </tr>
+              </thead>
+              <tbody>
+                {events.length === 0 && !error && (
                   <tr>
-                    <th>Time</th>
-                    <th>Node</th>
-                    <th>UEI</th>
-                    <th>Message</th>
+                    <td colSpan={4} className="text-center" style={{ color: "var(--text-muted)" }}>
+                      No events yet.
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {filtered.length === 0 && !error && (
-                    <tr>
-                      <td colSpan={4} className="text-center" style={{ color: "var(--text-muted)" }}>
-                        {events.length === 0 ? "No events yet." : "No events match that filter."}
+                )}
+                {events.map((e) => {
+                  const color =
+                    SEVERITY_COLOR[(e.severity ?? "").toUpperCase()] ?? "var(--status-unknown)";
+                  return (
+                    <tr key={e.id}>
+                      <td style={{ color: "var(--text-muted)" }}>
+                        {e.time ? new Date(e.time).toLocaleString() : "—"}
+                      </td>
+                      <td style={{ color: "var(--text-primary)" }}>{e.nodeLabel ?? "—"}</td>
+                      <td>
+                        <span
+                          className="rounded px-1.5 py-0.5 text-[11px] font-mono"
+                          style={{ background: `${color}1f`, color }}
+                        >
+                          {e.uei?.split("/").pop() ?? e.uei ?? "—"}
+                        </span>
+                      </td>
+                      <td style={{ color: "var(--text-secondary)" }} className="max-w-lg truncate">
+                        {e.logMessage ?? "—"}
                       </td>
                     </tr>
-                  )}
-                  {filtered.map((e) => {
-                    const color =
-                      SEVERITY_COLOR[(e.severity ?? "").toUpperCase()] ?? "var(--status-unknown)";
-                    return (
-                      <tr key={e.id}>
-                        <td style={{ color: "var(--text-muted)" }}>
-                          {e.time ? new Date(e.time).toLocaleString() : "—"}
-                        </td>
-                        <td style={{ color: "var(--text-primary)" }}>{e.nodeLabel ?? "—"}</td>
-                        <td>
-                          <span
-                            className="rounded px-1.5 py-0.5 text-[11px] font-mono"
-                            style={{ background: `${color}1f`, color }}
-                          >
-                            {e.uei?.split("/").pop() ?? e.uei ?? "—"}
-                          </span>
-                        </td>
-                        <td style={{ color: "var(--text-secondary)" }} className="max-w-lg truncate">
-                          {e.logMessage ?? "—"}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </FilterableTable>
       </div>
     </>

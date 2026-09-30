@@ -14,6 +14,10 @@ export default async function ReportsPage() {
     error = "Couldn't reach the RoutingNMS API. Check ROUTINGNMS_API_URL / credentials.";
   }
 
+  const searchIndex = reports.map((r) =>
+    [r.displayName, r.id, r.description].filter(Boolean).join(" ").toLowerCase()
+  );
+
   return (
     <>
       <TopBar title="Reports" />
@@ -24,62 +28,54 @@ export default async function ReportsPage() {
           </div>
         )}
 
-        <FilterableTable
-          rows={reports}
-          searchFields={(r) => [r.displayName, r.id, r.description]}
-          placeholder="Filter reports…"
-        >
-          {(filtered) => (
-            <div className="glass-card overflow-hidden">
-              <div
-                className="flex items-center justify-between border-b px-5 py-4"
-                style={{ borderColor: "var(--border-subtle)" }}
+        <FilterableTable searchIndex={searchIndex} placeholder="Filter reports…">
+          <div className="glass-card overflow-hidden">
+            <div
+              className="flex items-center justify-between border-b px-5 py-4"
+              style={{ borderColor: "var(--border-subtle)" }}
+            >
+              <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                Report Catalog
+              </h2>
+              <span
+                className="rounded-full px-2.5 py-1 text-xs font-medium"
+                style={{ background: "var(--accent-soft)", color: "var(--text-secondary)" }}
               >
-                <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                  Report Catalog
-                </h2>
-                <span
-                  className="rounded-full px-2.5 py-1 text-xs font-medium"
-                  style={{ background: "var(--accent-soft)", color: "var(--text-secondary)" }}
-                >
-                  {reports.length}
-                </span>
-              </div>
-              <table className="tbl">
-                <thead>
-                  <tr>
-                    <th>Report</th>
-                    <th>Description</th>
-                    <th>Availability</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.length === 0 && !error && (
-                    <tr>
-                      <td colSpan={3} className="text-center" style={{ color: "var(--text-muted)" }}>
-                        {reports.length === 0
-                          ? "No report definitions found."
-                          : "No reports match that filter."}
-                      </td>
-                    </tr>
-                  )}
-                  {filtered.map((r) => (
-                    <tr key={r.id}>
-                      <td style={{ color: "var(--text-primary)" }}>{r.displayName ?? r.id}</td>
-                      <td style={{ color: "var(--text-secondary)" }}>{r.description ?? "—"}</td>
-                      <td
-                        style={{
-                          color: r.online === false ? "var(--text-muted)" : "var(--status-up)",
-                        }}
-                      >
-                        {r.online === false ? "Offline" : "Online"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                {reports.length}
+              </span>
             </div>
-          )}
+            <table className="tbl">
+              <thead>
+                <tr>
+                  <th>Report</th>
+                  <th>Description</th>
+                  <th>Availability</th>
+                </tr>
+              </thead>
+              <tbody>
+                {reports.length === 0 && !error && (
+                  <tr>
+                    <td colSpan={3} className="text-center" style={{ color: "var(--text-muted)" }}>
+                      No report definitions found.
+                    </td>
+                  </tr>
+                )}
+                {reports.map((r) => (
+                  <tr key={r.id}>
+                    <td style={{ color: "var(--text-primary)" }}>{r.displayName ?? r.id}</td>
+                    <td style={{ color: "var(--text-secondary)" }}>{r.description ?? "—"}</td>
+                    <td
+                      style={{
+                        color: r.online === false ? "var(--text-muted)" : "var(--status-up)",
+                      }}
+                    >
+                      {r.online === false ? "Offline" : "Online"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </FilterableTable>
 
         <div className="glass-card p-4 text-xs" style={{ color: "var(--text-muted)" }}>

@@ -17,6 +17,9 @@ export default async function NotificationsPage() {
 
   const outstanding = notifications.filter((n) => !n.respondTime);
   const acknowledged = notifications.filter((n) => n.respondTime);
+  const searchIndex = outstanding.map((n) =>
+    [n.nodeLabel, n.subject, n.textMsg].filter(Boolean).join(" ").toLowerCase()
+  );
 
   return (
     <>
@@ -28,63 +31,55 @@ export default async function NotificationsPage() {
           </div>
         )}
 
-        <FilterableTable
-          rows={outstanding}
-          searchFields={(n) => [n.nodeLabel, n.subject, n.textMsg]}
-          placeholder="Filter outstanding notifications…"
-        >
-          {(filtered) => (
-            <div className="glass-card overflow-hidden">
-              <div
-                className="flex items-center justify-between border-b px-5 py-4"
-                style={{ borderColor: "var(--border-subtle)" }}
+        <FilterableTable searchIndex={searchIndex} placeholder="Filter outstanding notifications…">
+          <div className="glass-card overflow-hidden">
+            <div
+              className="flex items-center justify-between border-b px-5 py-4"
+              style={{ borderColor: "var(--border-subtle)" }}
+            >
+              <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                Outstanding
+              </h2>
+              <span
+                className="rounded-full px-2.5 py-1 text-xs font-medium"
+                style={{
+                  background: outstanding.length > 0 ? "rgba(239,68,68,0.12)" : "var(--accent-soft)",
+                  color: outstanding.length > 0 ? "var(--status-down)" : "var(--text-secondary)",
+                }}
               >
-                <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                  Outstanding
-                </h2>
-                <span
-                  className="rounded-full px-2.5 py-1 text-xs font-medium"
-                  style={{
-                    background: outstanding.length > 0 ? "rgba(239,68,68,0.12)" : "var(--accent-soft)",
-                    color: outstanding.length > 0 ? "var(--status-down)" : "var(--text-secondary)",
-                  }}
-                >
-                  {outstanding.length}
-                </span>
-              </div>
-              <table className="tbl">
-                <thead>
-                  <tr>
-                    <th>Node</th>
-                    <th>Subject</th>
-                    <th>Message</th>
-                    <th>Sent</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.length === 0 && !error && (
-                    <tr>
-                      <td colSpan={4} className="text-center" style={{ color: "var(--text-muted)" }}>
-                        {outstanding.length === 0
-                          ? "Nothing outstanding — no unacknowledged notifications."
-                          : "No notifications match that filter."}
-                      </td>
-                    </tr>
-                  )}
-                  {filtered.map((n) => (
-                    <tr key={n.id}>
-                      <td style={{ color: "var(--text-primary)" }}>{n.nodeLabel ?? "—"}</td>
-                      <td style={{ color: "var(--text-secondary)" }}>{n.subject ?? "—"}</td>
-                      <td style={{ color: "var(--text-secondary)" }}>{n.textMsg ?? "—"}</td>
-                      <td style={{ color: "var(--text-muted)" }}>
-                        {n.pageTime ? new Date(n.pageTime).toLocaleString() : "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                {outstanding.length}
+              </span>
             </div>
-          )}
+            <table className="tbl">
+              <thead>
+                <tr>
+                  <th>Node</th>
+                  <th>Subject</th>
+                  <th>Message</th>
+                  <th>Sent</th>
+                </tr>
+              </thead>
+              <tbody>
+                {outstanding.length === 0 && !error && (
+                  <tr>
+                    <td colSpan={4} className="text-center" style={{ color: "var(--text-muted)" }}>
+                      Nothing outstanding — no unacknowledged notifications.
+                    </td>
+                  </tr>
+                )}
+                {outstanding.map((n) => (
+                  <tr key={n.id}>
+                    <td style={{ color: "var(--text-primary)" }}>{n.nodeLabel ?? "—"}</td>
+                    <td style={{ color: "var(--text-secondary)" }}>{n.subject ?? "—"}</td>
+                    <td style={{ color: "var(--text-secondary)" }}>{n.textMsg ?? "—"}</td>
+                    <td style={{ color: "var(--text-muted)" }}>
+                      {n.pageTime ? new Date(n.pageTime).toLocaleString() : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </FilterableTable>
 
         <div className="glass-card overflow-hidden">

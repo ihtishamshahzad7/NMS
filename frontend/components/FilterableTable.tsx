@@ -1,36 +1,52 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
- * Generic client-side search box for a table whose rows are already
- * server-fetched. No new API calls, no server round-trip — just filters
- * the array already in the page by a simple case-insensitive substring
- * match across whichever fields the caller points at.
+ * Client-side search box for a table whose rows are already server-
+ * rendered. IMPORTANT: this component takes no function props — only
+ * plain data (`searchIndex`) and already-rendered JSX (`children`).
+ * Next.js Server Components can pass plain data across the server/client
+ * boundary but never functions, so an earlier version of this component
+ * (which took `searchFields`/`children` as callbacks) crashed every page
+ * that used it in production with "Functions cannot be passed directly to
+ * Client Components". This version filters by hiding/showing already-
+ * rendered <tr> elements via a plain string index instead.
  */
-export function FilterableTable<T>({
-  rows,
-  searchFields,
+export function FilterableTable({
+  searchIndex,
   placeholder = "Filter…",
   children,
 }: {
-  rows: T[];
-  searchFields: (row: T) => (string | number | undefined | null)[];
+  /** One lowercased searchable string per table row, in the SAME ORDER
+   * the rows appear in `children`'s <tbody>. */
+  searchIndex: string[];
   placeholder?: string;
-  children: (filtered: T[]) => React.ReactNode;
+  children: React.ReactNode;
 }) {
   const [query, setQuery] = useState("");
+  const [visibleCount, setVisibleCount] = useState(searchIndex.length);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const filtered = useMemo(() => {
+  useEffect(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter((row) =>
-      searchFields(row).some((field) => String(field ?? "").toLowerCase().includes(q))
-    );
-  }, [rows, query, searchFields]);
+    const table = containerRef.current?.querySelector("table");
+    const rows = table ? Array.from(table.querySelectorAll("tbody > tr")) : [];
+
+    let shown = 0;
+    rows.forEach((row, i) => {
+      // Rows beyond searchIndex's length (e.g. a static "no data" row)
+      // are left alone — they're not part of what we're filtering.
+      if (i >= searchIndex.length) return;
+      const matches = !q || searchIndex[i].includes(q);
+      (row as HTMLElement).style.display = matches ? "" : "none";
+      if (matches) shown++;
+    });
+    setVisibleCount(q ? shown : searchIndex.length);
+  }, [query, searchIndex]);
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3" ref={containerRef}>
       <div className="flex items-center gap-2">
         <input
           type="text"
@@ -46,11 +62,11 @@ export function FilterableTable<T>({
         />
         {query && (
           <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-            {filtered.length} / {rows.length}
+            {visibleCount} / {searchIndex.length}
           </span>
         )}
       </div>
-      {children(filtered)}
+      {children}
     </div>
   );
 }

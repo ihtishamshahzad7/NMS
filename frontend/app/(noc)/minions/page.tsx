@@ -26,6 +26,10 @@ export default async function MinionsPage() {
     error = "Couldn't reach the RoutingNMS API. Check ROUTINGNMS_API_URL / credentials.";
   }
 
+  const searchIndex = minions.map((m) =>
+    [m.label, m.id, m.location, m.status].filter(Boolean).join(" ").toLowerCase()
+  );
+
   return (
     <>
       <TopBar title="Distributed Monitoring" />
@@ -36,60 +40,52 @@ export default async function MinionsPage() {
           </div>
         )}
 
-        <FilterableTable
-          rows={minions}
-          searchFields={(m) => [m.label, m.id, m.location, m.status]}
-          placeholder="Filter minions…"
-        >
-          {(filtered) => (
-            <div className="glass-card overflow-hidden">
-              <div
-                className="flex items-center justify-between border-b px-5 py-4"
-                style={{ borderColor: "var(--border-subtle)" }}
+        <FilterableTable searchIndex={searchIndex} placeholder="Filter minions…">
+          <div className="glass-card overflow-hidden">
+            <div
+              className="flex items-center justify-between border-b px-5 py-4"
+              style={{ borderColor: "var(--border-subtle)" }}
+            >
+              <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                Minions
+              </h2>
+              <span
+                className="rounded-full px-2.5 py-1 text-xs font-medium"
+                style={{ background: "var(--accent-soft)", color: "var(--text-secondary)" }}
               >
-                <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                  Minions
-                </h2>
-                <span
-                  className="rounded-full px-2.5 py-1 text-xs font-medium"
-                  style={{ background: "var(--accent-soft)", color: "var(--text-secondary)" }}
-                >
-                  {minions.length}
-                </span>
-              </div>
-              <table className="tbl">
-                <thead>
-                  <tr>
-                    <th>Minion</th>
-                    <th>Monitoring Location</th>
-                    <th>Status</th>
-                    <th>Last Seen</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.length === 0 && !error && (
-                    <tr>
-                      <td colSpan={4} className="text-center" style={{ color: "var(--text-muted)" }}>
-                        {minions.length === 0
-                          ? "No Minions deployed — this instance is monitoring directly."
-                          : "No minions match that filter."}
-                      </td>
-                    </tr>
-                  )}
-                  {filtered.map((m) => (
-                    <tr key={m.id}>
-                      <td style={{ color: "var(--text-primary)" }}>{m.label ?? m.id}</td>
-                      <td style={{ color: "var(--text-secondary)" }}>{m.location ?? "—"}</td>
-                      <td style={{ color: statusColor(m.status) }}>{m.status ?? "Unknown"}</td>
-                      <td style={{ color: "var(--text-muted)" }}>
-                        {m.lastUpdated ? new Date(m.lastUpdated).toLocaleString() : "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                {minions.length}
+              </span>
             </div>
-          )}
+            <table className="tbl">
+              <thead>
+                <tr>
+                  <th>Minion</th>
+                  <th>Monitoring Location</th>
+                  <th>Status</th>
+                  <th>Last Seen</th>
+                </tr>
+              </thead>
+              <tbody>
+                {minions.length === 0 && !error && (
+                  <tr>
+                    <td colSpan={4} className="text-center" style={{ color: "var(--text-muted)" }}>
+                      No Minions deployed — this instance is monitoring directly.
+                    </td>
+                  </tr>
+                )}
+                {minions.map((m) => (
+                  <tr key={m.id}>
+                    <td style={{ color: "var(--text-primary)" }}>{m.label ?? m.id}</td>
+                    <td style={{ color: "var(--text-secondary)" }}>{m.location ?? "—"}</td>
+                    <td style={{ color: statusColor(m.status) }}>{m.status ?? "Unknown"}</td>
+                    <td style={{ color: "var(--text-muted)" }}>
+                      {m.lastUpdated ? new Date(m.lastUpdated).toLocaleString() : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </FilterableTable>
       </div>
     </>
