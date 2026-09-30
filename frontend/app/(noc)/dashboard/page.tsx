@@ -8,16 +8,28 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   // Each call is independent and fails softly — one slow/unavailable
   // RoutingNMS endpoint shouldn't blank the whole dashboard.
-  const [nodesRes, alarmsRes, outagesRes] = await Promise.allSettled([
-    routingnms.listNodes(1),
-    routingnms.listAlarms(8),
-    routingnms.listOutages(1),
-  ]);
+  const [nodesRes, alarmsRes, outagesRes, notificationsRes, businessServicesRes, minionsRes] =
+    await Promise.allSettled([
+      routingnms.listNodes(1),
+      routingnms.listAlarms(8),
+      routingnms.listOutages(1),
+      routingnms.listNotifications(1),
+      routingnms.listBusinessServices(),
+      routingnms.listMinions(),
+    ]);
 
   const nodeCount = nodesRes.status === "fulfilled" ? nodesRes.value.count : "—";
   const alarmCount = alarmsRes.status === "fulfilled" ? alarmsRes.value.count : "—";
   const outageCount = outagesRes.status === "fulfilled" ? outagesRes.value.count : "—";
   const recentAlarms = alarmsRes.status === "fulfilled" ? alarmsRes.value.alarms : [];
+  const notificationCount =
+    notificationsRes.status === "fulfilled" ? notificationsRes.value.count : "—";
+  const businessServices = businessServicesRes.status === "fulfilled" ? businessServicesRes.value : [];
+  const degradedServices = businessServices.filter(
+    (s) => s.operationalStatus && !["NORMAL", "CLEARED"].includes(s.operationalStatus.toUpperCase())
+  ).length;
+  const minions = minionsRes.status === "fulfilled" ? minionsRes.value : [];
+  const minionsDown = minions.filter((m) => (m.status ?? "").toUpperCase() !== "STARTED").length;
   const connectionFailed = nodesRes.status === "rejected" && alarmsRes.status === "rejected";
 
   return (
@@ -48,6 +60,28 @@ export default async function DashboardPage() {
             accentColor={Number(outageCount) > 0 ? "var(--status-down)" : undefined}
           />
           <StatCard label="Platform" value="Operational" accentColor="var(--status-up)" />
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <StatCard
+            label="Outstanding Notifications"
+            value={notificationCount}
+            accentColor={Number(notificationCount) > 0 ? "var(--status-warning)" : undefined}
+          />
+          {businessServices.length > 0 && (
+            <StatCard
+              label="Business Services Degraded"
+              value={`${degradedServices} / ${businessServices.length}`}
+              accentColor={degradedServices > 0 ? "var(--status-down)" : "var(--status-up)"}
+            />
+          )}
+          {minions.length > 0 && (
+            <StatCard
+              label="Minions Online"
+              value={`${minions.length - minionsDown} / ${minions.length}`}
+              accentColor={minionsDown > 0 ? "var(--status-down)" : "var(--status-up)"}
+            />
+          )}
         </div>
 
         <div className="glass-card overflow-hidden">
