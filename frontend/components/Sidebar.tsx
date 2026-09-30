@@ -20,6 +20,7 @@ import {
   Workflow,
   FileBarChart,
   Tags,
+  Radio,
   LogOut,
   type LucideIcon,
 } from "lucide-react";
@@ -42,6 +43,7 @@ const ICONS: Record<string, LucideIcon> = {
   Workflow,
   FileBarChart,
   Tags,
+  Radio,
 };
 
 export function Sidebar() {
@@ -85,6 +87,19 @@ export function Sidebar() {
             {BRAND.tagline}
           </div>
         </div>
+      </div>
+
+      <div
+        className="flex items-center justify-between rounded-md border px-2.5 py-1.5 text-[11px]"
+        style={{ borderColor: "var(--border-subtle)", color: "var(--text-muted)" }}
+      >
+        <span>Quick jump</span>
+        <kbd
+          className="rounded px-1.5 py-0.5 font-mono"
+          style={{ background: "var(--accent-soft)", color: "var(--text-secondary)" }}
+        >
+          ⌘K
+        </kbd>
       </div>
 
       <nav className="flex flex-col gap-6">
