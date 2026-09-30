@@ -1,0 +1,18 @@
+<jasperReport name="NodeId_to_NodeLabel_subreport" language="java" pageWidth="206" pageHeight="20" columnWidth="206" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="5b798034-b416-4e0d-8d6a-3d51704044dd">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="NODE_ID" class="java.lang.Integer">
+		<defaultValueExpression><![CDATA[7]]></defaultValueExpression>
+	</parameter>
+	<query language="sql"><![CDATA[select node.nodelabel from node where node.nodeid = '$P!{NODE_ID}';]]></query>
+	<field name="nodelabel" class="java.lang.String"/>
+	<background splitType="Stretch"/>
+	<detail>
+		<band height="20" splitType="Stretch">
+			<element kind="textField" uuid="16b1351b-d047-4acf-a0ec-e3c0e973db10" x="0" y="0" width="206" height="20">
+				<expression><![CDATA[$F{nodelabel}]]></expression>
+			</element>
+		</band>
+	</detail>
+</jasperReport>

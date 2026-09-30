@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xmlns:onmsgi="http://xmlns.opennms.org/xsd/spring/onms-osgi"
+       xsi:schemaLocation="
+  http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+  http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd
+  http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.2.xsd
+  http://xmlns.opennms.org/xsd/spring/onms-osgi http://xmlns.opennms.org/xsd/spring/onms-osgi.xsd
+">
+
+    <context:annotation-config/>
+
+    <bean id="collectionSetMapper" class="org.opennms.features.kafka.producer.collection.CollectionSetMapper">
+       <constructor-arg ref="nodeDao"/>
+       <constructor-arg ref="sessionUtils"/>
+      <constructor-arg ref="resourceDao"/>
+    </bean>
+
+    <!--
+      Meta-data resolution, used by metric routing. EntityScopeProviderImpl autowires a
+      SecureCredentialsVault for the 'scv' context, which metric routing never uses, so a mock is
+      enough here and saves the tests a keystore and its file watcher.
+    -->
+    <bean id="secureCredentialsVault" class="org.mockito.Mockito" factory-method="mock">
+        <constructor-arg value="org.opennms.features.scv.api.SecureCredentialsVault"/>
+    </bean>
+
+    <bean id="entityScopeProvider" class="org.opennms.core.mate.model.EntityScopeProviderImpl"/>
+
+</beans>

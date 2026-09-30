@@ -1,0 +1,175 @@
+
+[[config-rest-api]]
+= Config Management
+
+Use the Config Management REST API to manage {page-component-title} configurations.
+Changes take effect immediately.
+
+== GETs (reading data)
+
+[caption=]
+.Config Management API GET functions
+[cols="2,4"]
+|===
+| Resource  | Description
+
+| /cm
+| Returns a list of all registered configuration names in JSON format (for example, `["provisiond", "org.opennms.features.datachoices"]`). +
+200: Return: String Array
+
+| /cm/schema
+| Returns the full OpenAPI schema (for Swagger UI) for all registered configurations, in JSON/YAML format depending on the `Accept` header. +
+200: Return: OpenAPI schema +
+400: Return: `{"MESSAGE": "<ERROR_MESSAGE>"}`
+
+| /cm/\{configName}
+| Returns a list of `configIds` in JSON/YAML format, (for example, `["config1", "config2"]`). +
+200: Return: String Array +
+400: Return: `{"MESSAGE": "<ERROR_MESSAGE>"}`
+
+| /cm/schema/\{configName}
+| Returns OpenAPI schema (for Swagger UI) in JSON/YAML format. +
+200: Return: OpenAPI schema +
+400: Return: `{"MESSAGE": "<ERROR_MESSAGE>"}`
+
+| /cm/\{configName}/\{configId}
+| Returns configuration in JSON/YAML format. +
+200: Return: Config Bean +
+400: Return: `{"MESSAGE": "<ERROR_MESSAGE>"}`
+
+| /cm/\{configName}/\{configId}/\{path}
+| Returns a part of the configuration specified by `configName`, `configId`, and the path to the part in JSONPath format.
+Returns 404 when the configuration does not exist.
+Returns 400 when the path parameter has a wrong format or specifies a nonexistent path. +
+200 Return: part of the configuration +
+404 Return: `{"MESSAGE": "<ERROR_MESSAGE>"}` +
+400 Return: `{"MESSAGE": "<ERROR_MESSAGE>"}`
+|===
+
+== POSTs (adding data)
+
+[caption=]
+.Config Management API POST functions
+[cols="2,4"]
+|===
+| Resource  | Description
+
+| /cm/\{configName}/\{configId}
+| Add new configuration.
+If the same configuration exists, it will return an error. +
+200: Return nothing +
+400: Return: `{"MESSAGE": "<ERROR_MESSAGE>"}`
+
+| /cm/\{configName}/\{configId}/\{path}
+| Adds an array element to the configuration part specified by `configName`, `configId`, and the path to the part in JSONPath format.
+Returns 404 when the configuration does not exist.
+Returns 400 when the path parameter has a wrong format, specifies a nonexistent path, or the provided part of the configuration has a wrong format. +
+200 Return: nothing +
+404 Return: `{"MESSAGE": "<ERROR_MESSAGE>"}` +
+400 Return: `{"MESSAGE": "<ERROR_MESSAGE>"}`
+|===
+
+== PUTs (modifying data)
+
+[caption=]
+.Config Management API PUT functions
+[cols="3,4"]
+|===
+| Resource  | Description
+
+| /cm/\{configName}/\{configId}
+|  Update configuration.
+If configuration does not exist, it will return error.
+Accepts an optional `replace` query parameter (`?replace=true` or `?replace=false`, default `false`).
+When `replace=false`, the supplied JSON is merged into the existing configuration; when `replace=true`, the existing configuration is fully replaced by the supplied JSON. +
+200: Return: nothing +
+400: Return: `{"MESSAGE": "<ERROR_MESSAGE>"}`
+
+| /cm/\{configName}/\{configId}/\{path}
+| Updates a part of the configuration specified by `configName`, `configId`, and the path to the part in JSONPath format.
+Returns 404 when the configuration does not exist.
+Returns 400 when the path parameter has a wrong format, specifies a nonexistent path, or the provided part of the configuration has a wrong format. +
+200 Return: nothing +
+404 Return: `{"MESSAGE": "<ERROR_MESSAGE>"}` +
+400 Return: `{"MESSAGE": "<ERROR_MESSAGE>"}`
+
+| /cm/\{configName}/\{configId}/\{pathToParent}/\{nodeName}
+| Updates or inserts a part of the configuration specified by `configName`, `configId`, and the path to the parent node in JSONPath format with the node name.
+Returns 404 when the configuration does not exist.
+Returns 400 when the `pathToParent` parameter has a wrong format, specifies a nonexistent path, or the provided part of the configuration has a wrong format. +
+200 Return: nothing +
+404 Return: `{"MESSAGE": "<ERROR_MESSAGE>"}` +
+400 Return: `{"MESSAGE": "<ERROR_MESSAGE>"}` +
+|===
+
+=== Examples
+
+The following example payload multiplies each thread pool size by a factor of 10 and empties the external requisitions list of entries (if any exist):
+
+[source, json]
+----
+{
+    "rescanThreads": 100,
+    "requistion-dir": "/opt/opennms/etc/imports",
+    "importThreads": 80,
+    "scanThreads": 100,
+    "writeThreads": 80,
+    "foreign-source-dir": "/opt/opennms/etc/foreign-sources",
+    "requisition-def": []
+}
+----
+
+NOTE: Do not change the `requisition-dir` and `foreign-source-dir` elements unless OpenNMS support tells you to do so.
+
+You can also target a single element using a cURL command:
+
+[source]
+curl -X PUT -u 'admin:admin' https://opennms.example.com/opennms/rest/cm/provisiond/default -H 'Content-type: application/json' --data '{ "rescanThreads": 150 }'
+
+==== Scheduled requisition imports
+
+Each entry in the `requisition-def` array may carry a `cron-schedule` value that tells Provisiond when to pull and import that requisition.
+The value is parsed as a Quartz `CronTrigger` expression, not a standard Unix crontab expression.
+
+* The expression has *six* required fields (`seconds minutes hours day-of-month month day-of-week`) and an optional seventh `year` field, instead of the five Unix `crontab(5)` fields.
+* Either `day-of-month` or `day-of-week` must be `?` -- the two cannot both be specific values in the same expression.
+* Provisiond's scheduler does not back-fill missed fires.
+If {page-component-title} is down when a scheduled import would have run, the run is skipped and the next scheduled run picks up normally.
+
+Example expressions:
+
+[source]
+----
+0 0 0 * * ?       # every day at midnight
+0 0/30 * * * ?    # every 30 minutes
+0 0 2 ? * MON     # 02:00 every Monday
+----
+
+See the link:https://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html[Quartz `CronTrigger` tutorial] for the full grammar, including the `L`, `W`, and `#` modifiers.
+
+Example cURL command that PUTs a single weekly-scheduled requisition definition:
+
+[source]
+curl -X PUT -u 'admin:admin' https://opennms.example.com/opennms/rest/cm/provisiond/default -H 'Content-type: application/json' --data '{ "requisition-def": [ { "import-name": "weekly-inventory", "import-url-resource": "requisition://customer1", "cron-schedule": "0 0 2 ? * MON" } ] }'
+
+== DELETEs (removing data)
+
+[caption=]
+.Config Management API DELETE functions
+[cols="2,4"]
+|===
+| Resource  | Description
+
+| /cm/\{configName}/\{configId}
+| Delete configuration. +
+200: Return nothing +
+400: Return: `{"MESSAGE": "<ERROR_MESSAGE>"}`
+
+| /cm/\{configName}/\{configId}/\{path}
+| Deletes a part of the configuration specified by `configName`, `configId`, and the path to the part in JSONPath format.
+Returns 404 when the configuration does not exist.
+Returns 400 when the path parameter has a wrong format, specifies a nonexistent path, or the provided part of the configuration has a wrong format. +
+200 Return: nothing +
+404 Return: `{"MESSAGE": "<ERROR_MESSAGE>"}` +
+400 Return: `{"MESSAGE": "<ERROR_MESSAGE>"}`
+|===

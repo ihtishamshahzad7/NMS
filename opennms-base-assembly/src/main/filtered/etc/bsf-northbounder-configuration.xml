@@ -1,0 +1,30 @@
+<bsf-northbounder-config>
+   <enabled>false</enabled>
+   <nagles-delay>1000</nagles-delay>
+   <batch-size>100</batch-size>
+   <queue-size>300000</queue-size>
+   <!--
+
+   The filter expects a SPEL expression against NorthboundAlarm's fields
+
+   <engine>
+      <name>Example</name>
+      <filter>ipAddr != '0.0.0.0'</filter>
+      <language>groovy</language>
+      <className>org.codehaus.groovy.bsf.GroovyEngine</className>
+      <extensions>groovy,gy</extensions>
+      <onStart>
+         // assign without 'def' so the binding is shared with onStop and onAlarm
+         log = bsf.lookupBean("log")
+         log.info("Starting...")
+      </onStart>
+      <onStop>
+         log.info("Stopping...")
+      </onStop>
+      <onAlarm>
+         a = bsf.lookupBean("alarm")
+         log.info("processing alarm " + a)
+      </onAlarm>
+    </engine>
+   -->
+</bsf-northbounder-config>

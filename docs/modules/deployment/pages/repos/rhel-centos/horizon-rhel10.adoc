@@ -1,0 +1,6 @@
+.Add repository
+[source, console]
+----
+sudo dnf -y install https://yum.opennms.org/repofiles/opennms-repo-stable-rhel10.noarch.rpm
+sudo rpm --import https://yum.opennms.org/OPENNMS-GPG-KEY
+----

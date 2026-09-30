@@ -1,0 +1,234 @@
+<?xml version="1.0"?>
+<destinationPaths>
+    <header>
+        <rev>1.2</rev>
+        <created>Wednesday, February 6, 2002 10:10:00 AM EST</created>
+        <mstation>localhost</mstation>
+    </header>
+    <path name="Email-Reporting">
+        <target>
+                <name>Reporting</name>
+                <command>javaEmail</command>
+        </target>
+    </path>
+    <path name="Page-Management">
+        <target>
+                <name>Management</name>
+                <command>textPage</command>
+                <command>javaPagerEmail</command>
+                <command>javaEmail</command>
+        </target>
+    </path>
+    <path name="Page-Network/Systems/Management">
+	<target interval="15m">
+                <name>Network/Systems</name>
+                <command>textPage</command>
+                <command>javaPagerEmail</command>
+                <command>javaEmail</command>
+        </target>
+        <escalate delay="15m">
+            <target>
+                <name>Management</name>
+                <command>textPage</command>
+                <command>javaPagerEmail</command>
+                <command>javaEmail</command>
+            </target>
+        </escalate>
+    </path>
+    <path name="Page-Network/Systems">
+        <target>
+                <name>Network/Systems</name>
+                <command>textPage</command>
+                <command>javaPagerEmail</command>
+                <command>javaEmail</command>
+        </target>
+    </path>
+    <path name="Email-Management">
+        <target>
+                <name>Management</name>
+                <command>javaEmail</command>
+        </target>
+    </path>
+    <path name="Page-Desktops/Management">
+        <target>
+                <name>Desktops</name>
+                <command>textPage</command>
+                <command>javaPagerEmail</command>
+                <command>javaEmail</command>
+        </target>
+        <escalate delay="15m">
+                <target>
+                        <name>Management</name>
+                        <command>textPage</command>
+                        <command>javaPagerEmail</command>
+                        <command>javaEmail</command>
+                </target>
+        </escalate>
+    </path>
+    <path name="Email-Network/Systems/Management">
+        <target>
+                <name>Network/Systems</name>
+                <command>javaEmail</command>
+        </target>
+        <escalate delay="15m">
+                <target>
+                        <name>Management</name>
+                        <command>javaEmail</command>
+                </target>
+        </escalate>
+    </path>
+    <path name="Email-Security/Management">
+        <target>
+                <name>Security</name>
+                <command>javaEmail</command>
+        </target>
+        <escalate delay="15m">
+                <target>
+                        <name>Management</name>
+                        <command>javaEmail</command>
+                </target>
+        </escalate>
+    </path>
+    <path name="Page-Security/Management">
+        <target>
+                <name>Security</name>
+                <command>textPage</command>
+                <command>javaPagerEmail</command>
+                <command>javaEmail</command>
+        </target>
+        <escalate delay="15m">
+                <target>
+                        <name>Management</name>
+                        <command>textPage</command>
+                        <command>javaPagerEmail</command>
+                        <command>javaEmail</command>
+                </target>
+        </escalate>
+    </path>
+    <path name="Email-Desktops/Management">
+        <target>
+                <name>Desktops</name>
+                <command>javaEmail</command>
+        </target>
+        <escalate delay="15m">
+                <target>
+                        <name>Management</name>
+                        <command>javaEmail</command>
+                </target>
+        </escalate>
+    </path>
+    <path name="Email-Desktops">
+        <target>
+                <name>Desktops</name>
+                <command>javaEmail</command>
+        </target>
+    </path>
+    <path name="Email-Security">
+        <target>
+                <name>Security</name>
+                <command>javaEmail</command>
+        </target>
+    </path>
+    <path name="Email-Network/Systems">
+        <target>
+                <name>Network/Systems</name>
+                <command>javaEmail</command>
+        </target>
+    </path>
+    <path name="Page-Desktops">
+        <target>
+                <name>Desktops</name>
+                <command>textPage</command>
+                <command>javaPagerEmail</command>
+                <command>javaEmail</command>
+        </target>
+    </path>
+    <path name="Page-Security">
+        <target>
+                <name>Security</name>
+                <command>textPage</command>
+                <command>javaPagerEmail</command>
+                <command>javaEmail</command>
+        </target>
+    </path>
+    <path name="Page-All">
+        <target>
+                <name>Network/Systems</name>
+                <command>textPage</command>
+                <command>javaPagerEmail</command>
+                <command>javaEmail</command>
+        </target>
+        
+        <target interval="15m">
+                <name>Security</name>
+                <command>textPage</command>
+                <command>javaPagerEmail</command>
+                <command>javaEmail</command>
+        </target>
+        
+        <target interval="1h">
+                <name>Desktops</name>
+                <command>textPage</command>
+                <command>javaPagerEmail</command>
+                <command>javaEmail</command>
+        </target>
+        
+        <target interval="1d">
+                <name>Management</name>
+                <command>page</command>
+                <command>javaPagerEmail</command>
+                <command>javaEmail</command>
+        </target>
+    </path>
+    <path name="Email-All">
+        <target>
+                <name>Network/Systems</name>
+                <command>javaEmail</command>
+         </target>
+        <target>
+                <name>Security</name>
+                <command>javaEmail</command>
+        </target>
+        <target>
+                <name>Desktops</name>
+                <command>javaEmail</command>
+        </target>
+        <target>
+                <name>Management</name>
+                <command>javaEmail</command>
+        </target>
+    </path>
+    <path name="Email-Admin">
+        <target>
+                <name>Admin</name>
+                <command>javaEmail</command>
+        </target>
+    </path>
+    <path name="Growl-Admin">
+        <target>
+                <name>Admin</name>
+                <command>growlMessage</command>
+        </target>
+    </path>
+    <!-- Manages the trouble ticket for the alarm associated with the notification's event.
+    The troubleTicket command is defined in the notificationCommands.xml example; reference
+    Create-Ticket from problem notifications and Close-Ticket from the notifications for the
+    events that resolve them.  The initial-delay is required on both: on Create-Ticket it
+    gives alarmd time to associate the event with an alarm, and on Close-Ticket it gives
+    alarmd time to clear that alarm, which the ticketer requires before it will close a
+    ticket.  With 0s either lookup can run too early and the notification does nothing.  The
+    target's contact information is not used.  Target a single user rather than a group: a
+    group target runs the command once per member, which can duplicate tickets. -->
+    <path name="Create-Ticket" initial-delay="30s">
+        <target>
+                <name>admin</name>
+                <command>troubleTicket</command>
+        </target>
+    </path>
+    <path name="Close-Ticket" initial-delay="30s">
+        <target>
+                <name>admin</name>
+                <command>troubleTicket</command>
+        </target>
+    </path>
+</destinationPaths>

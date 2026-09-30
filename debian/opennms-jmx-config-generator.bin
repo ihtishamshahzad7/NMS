@@ -1,0 +1,3 @@
+#!/bin/sh
+
+/opt/opennms/bin/jmx-config-generator "$@"

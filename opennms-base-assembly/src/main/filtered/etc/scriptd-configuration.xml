@@ -1,0 +1,3 @@
+<scriptd-configuration xmlns="http://xmlns.opennms.org/xsd/config/scriptd">
+   <engine language="groovy" className="org.codehaus.groovy.bsf.GroovyEngine" extensions="groovy gy"/>
+</scriptd-configuration>

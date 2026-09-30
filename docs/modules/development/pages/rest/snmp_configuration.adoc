@@ -1,0 +1,406 @@
+
+= SNMP Configuration
+
+NOTE: {page-component-title} has been updated to move SNMP Configuration into the database.
+Please see xref:development:rest/snmp_configuration_legacy.adoc[SNMP Configuration (Legacy)] for the legacy REST API.
+Generally speaking you should avoid that legacy API and use the new API instead, but if you have a use case that requires the legacy API, that page describes how to use it.
+
+This is the new REST API for SNMP configuration.
+It is used by the SNMP Configuration UI in the OpenNMS web interface, but it can also be used by external applications to manage SNMP configuration in OpenNMS directly.
+
+You can use this API to manage SNMP configuration for individual IP addresses, for example to edit the community string, SNMP version, etc. for an IP address or range.
+If you make a change that would overlap with any existing configurations, the system will automatically create groups of `definition` entries as necessary.
+If a configuration matches the defaults, then no `definition` entry is created.
+
+The following operations are supported.
+
+The base URL for the API is http://localhost:8980/opennms/api/v2 (substitute your protocol, OpenNMS host and port as necessary).
+
+
+== GETs (reading data)
+
+[caption=]
+.SNMP Configuration API GET functions
+[cols="40%,60%"]
+|===
+| Parameter | Description
+
+| /snmp-config
+| Get the entire SNMP configuration in JSON format.
+
+| /snmp-config/lookup?ipAddress=\{ipaddress}&location=\{location}
+| Get the SNMP configuration for a given IP address at a given monitoring location.
+If `location` is omitted, the system will use the Default location.
+
+*Example:* `http://localhost:8980/opennms/api/v2/snmp-config/lookup?ipAddress=10.0.0.1&location=datacenter1`
+| /snmp-config/download?format=\{format}
+| Download the entire SNMP configuration in JSON or XML format as a file.
+`format` can be either `json` or `xml`, or omitted for `json`.
+
+*Example:* `http://localhost:8980/opennms/api/v2/snmp-config/download?format=xml`
+|===
+
+
+== PUT (modifying data)
+
+[caption=]
+.SNMP Configuration API PUT functions
+[cols="40%,60%"]
+|===
+| Parameter | Description
+
+| /snmp-config/definition
+| Add or update an SNMP configuration definition, in JSON format. See below for the SNMP Definition schema.
+This can be used to apply configurations to individual IP addresses or ranges, or use `IPLIKE` expressions.
+The system will automatically reconfigure SNMP configuration as necessary, and create groups of `definition` entries if there are overlapping configurations.
+|===
+
+
+== POST (modifying data)
+
+[caption=]
+.SNMP Configuration API POST functions
+[cols="40%,60%"]
+|===
+| Parameter | Description
+
+| /snmp-config/defaults
+| Save SNMP default override configuration, in JSON format. See below for the SNMP Configuration schema.
+For each configuration item, the system has some default values.
+However, you can use this API to override those defaults with your own values.
+For example, if you want to change the default SNMP read community string from `public` to something else, you can use this API to do that.
+
+
+| /snmp-config/profile
+| Add or update an SNMP configuration profile, in JSON format. See below for the SNMP Profile schema.
+
+| /snmp-config/upload
+| Upload an entire SNMP configuration, in JSON format. See below for the schema.
+
+| /snmp-config/upload/xml
+| Upload an entire SNMP configuration, in XML format. See below for the schema.
+
+|===
+
+
+== DELETE (removing data)
+
+[caption=]
+.SNMP Configuration API DELETE functions
+[cols="40%,60%"]
+|===
+| Parameter | Description
+
+| /snmp-config/definition?specifics=\{specifics}&ranges=\{ranges}&ipmatches=\{ipLike}&location=\{location}
+| Remove an SNMP configuration definition.
+This in effect resets the SNMP configuration for the specified IP address(es) and/or range(s) and/or `IPLIKE` expression(s) at the specified monitoring location back to the defaults.
+
+You can supply any combination of the following parameters to specify which definition(s) to remove.
+
+You can use commas to separate individual values for each parameter.
+
+*Example:* `http://localhost:8980/opennms/api/v2/snmp-config/definition?specifics=10.0.0.1&location=datacenter1`
+
+would remove the definition for IP address 10.0.0.1.
+
+
+*Example:* `http://localhost:8980/opennms/api/v2/snmp-config/definition?ranges=10.0.0.1-10.0.0.10,10.2.0.0-10.2.3.10&location=datacenter1`
+
+would remove both ranges.
+
+The system will automatically reconfigure SNMP configuration as necessary.
+
+| /snmp-config/profile?label=\{label}
+| Remove an SNMP configuration profile with the given `label`.
+|===
+
+
+
+== API Schema
+
+While the older XML configuration format is still supported, we recommend using the new JSON format for SNMP configuration, as it is more flexible and easier to work with.
+
+
+The following table shows all supported attributes for SNMP Configuration.
+It also shows the version limitations, default values, and the restrictions, if any:
+
+[cols="1,1,1,1"]
+|===
+| Attribute | Default Value | Restricted to SNMP Version | Restrictions
+
+| version
+| v1
+| _None_
+| `v1`, `v2c`, or `v3` are valid arguments.
+If an invalid or empty argument is provided, `v1` is used.
+
+| port
+| 161
+| _None_
+| Integer > `0`
+
+| retries
+| 1
+| _None_
+| Integer > `0`
+
+| timeout
+| 3000
+| _None_
+| Integer > `0`
+
+| maxVarsPerPdu
+| 10
+| _None_
+| Integer > `0`
+
+| maxRepetitions
+| 2
+| _None_
+| Integer > `0`
+
+| maxRequestSize
+| 65535
+| _None_
+| Integer > `0`. Must be at least `484`.
+
+| ttl
+| _Blank_
+| _None_
+| Integer > `0`. Time to live in milliseconds.
+
+| proxyHost
+| _Blank_
+| _None_
+| _None_
+
+| readCommunity
+| public
+| v1, v2c
+| _None_
+
+| writeCommunity
+| private
+| v1, v2c
+| _None_
+
+| securityName
+| opennmsUser
+| v3
+| _None_
+
+| securityLevel
+| noAuthNoPriv
+| v3
+| Integer value, which can be `null`, `1`, `2`, or `3`.
+See note below table for an explanation of these values.
+
+| authPassPhrase
+| 0p3nNMSv3
+| v3
+| _None_
+
+| authProtocol
+| MD5
+| v3
+| Only `MD5`, `SHA`, `SHA-224`, `SHA-256`, `SHA-512` are valid arguments.
+
+| privPassPhrase
+| 0p3nNMSv3
+| v3
+| _None_
+
+| privProtocol
+| DES
+| v3
+| Only `DES`, `AES`, `AES192`, or `AES256` are valid arguments.
+
+| engineId
+| _Blank_
+| v3
+| _None_
+
+| contextEngineId
+| _Blank_
+| v3
+| _None_
+
+| contextName
+| _Blank_
+| v3
+| _None_
+
+| enterpriseId
+| _Blank_
+| v3
+| _None_
+|===
+
+.Note on the `securityLevel` field
+****
+Possible values for this field:
+
+* 1 means `noAuthNoPriv`.
+* 2 means `authNoPriv`.
+* 3 means `authPriv`.
+
+If you do not set the security level manually it is determined automatically:
+
+* If no `authPassPhrase` set, the securityLevel is 1.
+* If `authPassPhrase` is set but no `privPassPhrase` is set, the securityLevel is 2.
+* If both a `authPassPhrase` and a `privPassPhrase` are set, the securityLevel is 3.
+****
+
+NOTE: In the JSON examples below, the commented sections are explanatory only and are not part of the actual JSON body that you would send in a request.
+
+
+.Example: Full JSON Configuration for GET, Upload and Download
+[source,json]
+----
+{
+  "maxRepetitions": 2, <1>
+  "maxRequestSize": 65535,
+  "readCommunity": "public123",
+  "definition": [
+    {
+      "range": [
+        {
+          "begin": "10.0.0.0",
+          "end": "10.0.0.9"
+        }
+      ],
+      "readCommunity": "myReadCommunityFor10Net" <2>
+    },
+    {
+      "specific": [
+        "10.9.9.9", "10.11.12.13"
+      ]
+      <2>
+    },
+    {
+      "ipMatch": [
+        "10.0.0.*", "192.168.*.*"
+      ]
+      <2>
+    }
+  ],
+  "profiles": {
+    "profile": [
+      {
+        "label": "datacenter1",
+        "filter": "filter expression 1"
+        <3>
+      },
+      {
+        "label": "datacenter2",
+        "filter": "filter expression 2"
+        <3>
+      }
+    ]
+  }
+}
+----
+<1> Any fields from the table above can go here, these are the default overrides, if any.
+They can be omitted or `null` to use the system defaults
+<2> Any fields from the table above can go here, to override the defaults for this definition, specific or ipMatch.
+<3> Any fields from the table above can go here, to override the defaults for this profile.
+
+
+When updating a Definition or Profile, use the JSON body that's inside the `definition` or `profile` array, respectively.
+
+.Example: PUT Definition, JSON Configuration
+[source,json]
+----
+{
+  "maxRepetitions": 2, <1>
+  "maxRequestSize": 65535,
+  "readCommunity": "public123",
+  "range": [
+    {
+      "begin": "10.0.0.0",
+      "end": "10.0.0.9"
+    }
+  ]
+}
+----
+<1> Any fields from the table above can go here, these are the overrides for this definition.
+
+
+.Example: POST Profile, JSON Configuration
+[source,json]
+----
+{
+  "maxRepetitions": 2, <1>
+  "maxRequestSize": 65535,
+  "readCommunity": "public123",
+  "label": "myProfileLabel",
+  "filter": "myFilterExpression"
+}
+----
+<1> Any fields from the table above can go here, these are the overrides for this profile.
+
+
+== curl Examples
+
+.Example: Add a Definition
+[source, bash]
+----
+curl -v -u admin:admin -X PUT -H "Content-Type: application/json" \
+     -d @./your-data-file.json \
+     http://localhost:8980/opennms/api/v2/snmp-config/definition
+----
+
+Creates or updates a `definition` entry, with configuration in the given local JSON file.
+
+
+
+.Example: Add a Definition (inline)
+[source, bash]
+----
+curl -v -u admin:admin -X PUT \
+   -H "Content-Type: application/json" \
+   -d \
+'{
+  "readCommunity": "public-123",
+  "timeout": 2000,
+  "range": [
+    {
+      "begin": "10.0.0.0",
+      "end": "10.0.0.9"
+    }
+  ],
+  "ipMatch": ["10.9.9.9"]
+}' \
+ 'http://localhost:8980/opennms/api/v2/snmp-config/definition'
+----
+
+Creates or updates a `definition` entry, with configuration inline.
+
+
+.Example: Get entire SNMP Configuration in JSON Format
+[source, bash]
+----
+curl -v -u admin:admin http://localhost:8980/opennms/api/v2/snmp-config
+----
+
+
+.Example: Download entire SNMP Configuration in JSON Format
+[source, bash]
+----
+curl -v -u admin:admin http://localhost:8980/opennms/api/v2/snmp-config/download
+----
+
+
+.Example: Download entire SNMP Configuration in XML Format
+[source, bash]
+----
+curl -v -u admin:admin http://localhost:8980/opennms/api/v2/snmp-config/download?format=xml
+----
+
+
+.Example: Look up configuration for IP address
+[source, bash]
+----
+curl -v -u admin:admin \
+ 'http://localhost:8980/opennms/api/v2/snmp-config/lookup?ipAddress=10.0.0.2&location=Default'
+----

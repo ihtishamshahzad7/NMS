@@ -1,0 +1,33 @@
+
+[[ref-policies]]
+= Policies
+:description: Overview of the provisioning policies section in the OpenNMS {page-component-title} documentation, including common parameters and policy ordering.
+
+This section describes all available built-in xref:operation:deep-dive/provisioning/introduction.adoc[provisioning] policies.
+You can configure them to allow node modifications or change provisioning behavior to meet the needs of your environment.
+
+For worked configurations grouped by task, see xref:reference:provisioning/policies/examples.adoc[].
+
+For information on how to extend the functionality of these policies, see the xref:development:development.adoc#development[Development section] to contribute to the project.
+
+== Common policy parameters
+
+The matchBehavior action is a Boolean control that determines how optional parameters will be evaluated.
+
+ALL_PARAMETERS::
+    The policy applies when all defined parameters match (Boolean AND logic).
+ANY_PARAMETER::
+    The policy applies when at least one set of defined parameters matches (Boolean OR logic).
+NO_PARAMETERS::
+    The policy applies when none of the defined parameters match (the opposite of ANY_PARAMETER).
+
+String parameters are set to search for a substring match by default.
+If you want the policy to evaluate a parameter against a regular expression, prefix the value with `~`.
+
+== Policy ordering
+
+Policies are applied in the order they appear in the foreign source definition.
+Each policy whose criteria match performs its action on the node or interface, in that order.
+When more than one policy sets the same attribute on the same entity, the policy applied later takes precedence.
+
+For interface policies, a `DO_NOT_PERSIST` match drops the interface, so any policies listed after it no longer act on it.

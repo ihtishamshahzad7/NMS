@@ -1,0 +1,27 @@
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:jaas="http://karaf.apache.org/xmlns/jaas/v1.0.0"
+	xmlns:ext="http://aries.apache.org/blueprint/xmlns/blueprint-ext/v1.5.0"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0 https://osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://aries.apache.org/blueprint/xmlns/blueprint-ext/v1.5.0 http://aries.apache.org/schemas/blueprint-ext/blueprint-ext-1.5.xsd
+	">
+
+    <reference id="userConfig" interface="org.opennms.netmgt.config.api.UserConfig" availability="mandatory" />
+
+    <!-- Resolve ${karaf.etc} in the jaas:module options below. -->
+    <ext:property-placeholder system-properties="override" />
+
+    <!-- Override the JAAS LoginModule in the Karaf Container -->
+    <jaas:config name="karaf" rank="1">
+        <!-- Public-key auth first; falls through to OpenNMS password auth on no match. -->
+        <jaas:module className="org.apache.karaf.jaas.modules.publickey.PublickeyLoginModule" flags="sufficient">
+            users = ${karaf.etc}/keys.properties
+        </jaas:module>
+        <jaas:module className="org.opennms.container.jaas.OpenNMSLoginModule" flags="required" />
+    </jaas:config>
+
+    <service interface="org.apache.karaf.jaas.modules.BackingEngineFactory">
+        <bean class="org.opennms.container.jaas.OpenNMSBackingEngineFactory"/>
+    </service>
+</blueprint>

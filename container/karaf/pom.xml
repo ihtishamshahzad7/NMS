@@ -1,0 +1,422 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+>
+    <parent>
+        <groupId>org.opennms</groupId>
+        <artifactId>org.opennms.container</artifactId>
+        <version>37.0.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.opennms.container</groupId>
+    <artifactId>org.opennms.container.karaf</artifactId>
+    <packaging>karaf-assembly</packaging>
+    <name>OpenNMS :: OSGi Container :: Embedded Karaf</name>
+
+    <properties>
+        <license.skipAddThirdParty>true</license.skipAddThirdParty>
+        <enforcer-skip-banned-dependencies>true</enforcer-skip-banned-dependencies>
+    </properties>
+
+    <build>
+        <!-- Include resources from src/main in the distribution -->
+        <resources>
+            <resource>
+                <directory>${project.basedir}/src/main/filtered-resources</directory>
+                <filtering>true</filtering>
+            </resource>
+            <resource>
+                <filtering>true</filtering>
+                <directory>src/main/internal</directory>
+                <targetPath>${project.build.directory}/internal</targetPath>
+            </resource>
+        </resources>
+
+        <plugins>
+            <!--
+                This configuration mimics the default Karaf assembly from:
+
+                https://github.com/apache/karaf/blob/karaf-X.X.X/assemblies/apache-karaf/pom.xml
+            -->
+            <plugin>
+                <groupId>org.apache.karaf.tooling</groupId>
+                <artifactId>karaf-maven-plugin</artifactId>
+                <extensions>true</extensions>
+                <configuration>
+                    <bootRepositories>
+                        <!--Karaf standard features-->
+                        <repository>mvn:org.apache.karaf.features/standard/${karafVersion}/xml/features</repository>
+                        <!-- OPENNMS: Replace the spring-legacy features files with our modified versions -->
+                        <repository>mvn:org.opennms.karaf/opennms/${project.version}/xml/spring-legacy</repository>
+                        <repository>mvn:org.ops4j.pax.cdi/pax-cdi-features/${paxCdiVersion}/xml/features</repository>
+                        <!-- OPENNMS: Add the OpenNMS feature repository -->
+                        <repository>mvn:org.opennms.karaf/opennms/${project.version}/xml/features</repository>
+                        <!-- OPENNMS: Add the OpenNMS Minion feature repository -->
+                        <repository>mvn:org.opennms.karaf/opennms/${project.version}/xml/minion</repository>
+                    </bootRepositories>
+                    <installedFeatures>
+                        <feature>wrapper</feature>
+                    </installedFeatures>
+                    <startupFeatures>
+                        <feature>eventadmin</feature>
+                    </startupFeatures>
+                    <bootFeatures>
+                        <feature>aries-blueprint</feature>
+                        <feature>bundle</feature>
+                        <feature>config</feature>
+                        <feature>deployer</feature>
+                        <feature>diagnostic</feature>
+                        <feature>feature</feature>
+                        <feature>instance</feature>
+                        <feature>jaas</feature>
+                        <feature>jaas-deployer</feature>
+                        <feature>jasypt-encryption</feature>
+                        <feature>kar</feature>
+                        <feature>log</feature>
+                        <feature>management</feature>
+                        <feature>package</feature>
+                        <feature>service</feature>
+                        <feature>shell</feature>
+                        <feature>shell-compat</feature>
+                        <feature>ssh/${karafSshdVersion}</feature>
+                        <feature>system</feature>
+                        <feature>wrap</feature>
+
+                        <!-- OPENNMS: Add http, http-whiteboard to the default list of features -->
+                        <feature>opennms-http-whiteboard</feature>
+                    </bootFeatures>
+                    <installedBundles>
+                        <bundle>mvn:org.ops4j.pax.logging/pax-logging-api/${paxLoggingVersion}</bundle>
+                        <bundle>mvn:org.ops4j.pax.logging/pax-logging-log4j2/${paxLoggingVersion}</bundle>
+                        <bundle>mvn:org.ops4j.pax.logging/pax-logging-logback/${paxLoggingVersion}</bundle>
+
+                        <!-- override for security (see etc/overrides.properties) -->
+                        <bundle>mvn:com.fasterxml.jackson.core/jackson-annotations/${jackson2AnnotationsVersion}</bundle>
+                        <bundle>mvn:com.fasterxml.jackson.core/jackson-core/${jackson2Version}</bundle>
+                        <bundle>mvn:com.fasterxml.jackson.core/jackson-databind/${jackson2Version}</bundle>
+                        <bundle>mvn:com.fasterxml.jackson.jaxrs/jackson-jaxrs-base/${jackson2Version}</bundle>
+                        <bundle>mvn:com.fasterxml.jackson.module/jackson-module-jaxb-annotations/${jackson2Version}</bundle>
+                        <bundle>mvn:com.fasterxml.jackson.jaxrs/jackson-jaxrs-json-provider/${jackson2Version}</bundle>
+
+                        <bundle>mvn:org.apache.servicemix.bundles/org.apache.servicemix.bundles.jasypt/${jasyptVersion}_1</bundle>
+                        <bundle>mvn:org.apache.servicemix.bundles/org.apache.servicemix.bundles.jasypt-spring31/${jasyptVersion}_1</bundle>
+                        <bundle>mvn:org.apache.servicemix.bundles/org.apache.servicemix.bundles.xstream/${xstreamVersion}_1</bundle>
+                        <bundle>mvn:org.codehaus.jettison/jettison/${jettisonVersion}</bundle>
+
+                        <!-- OPENNMS: initialize the config APIs at startup -->
+                        <bundle>mvn:org.opennms.features.config.osgi/org.opennms.features.config.osgi.del/${project.version}</bundle>
+                    </installedBundles>
+                    <libraries>
+                        <library>mvn:org.apache.servicemix.bundles/org.apache.servicemix.bundles.xerces/${xercesVersion}_1;type:=endorsed;export:=true;delegate:=true</library>
+                        <library>mvn:org.apache.servicemix.specs/org.apache.servicemix.specs.jaxp-api-1.4/${karaf.servicemix.specs.version};type:=endorsed;export:=true</library>
+                        <library>mvn:org.apache.servicemix.specs/org.apache.servicemix.specs.jaxb-api-2.2/${karaf.servicemix.specs.version};type:=endorsed;export:=true</library>
+                        <library>mvn:org.apache.servicemix.specs/org.apache.servicemix.specs.jaxb-api-2.3/2.3_1;type:=endorsed;export:=true</library>
+                        <library>mvn:org.apache.servicemix.specs/org.apache.servicemix.specs.jaxws-api-2.2/${karaf.servicemix.specs.version};type:=endorsed;export:=true</library>
+                        <library>mvn:org.apache.servicemix.specs/org.apache.servicemix.specs.saaj-api-1.3/${karaf.servicemix.specs.version};type:=endorsed;export:=true</library>
+                        <library>mvn:org.apache.servicemix.specs/org.apache.servicemix.specs.activation-api-1.1/${karaf.servicemix.specs.version};type:=endorsed;export:=true</library>
+                        <library>mvn:org.apache.servicemix.specs/org.apache.servicemix.specs.stax-api-1.2/${karaf.servicemix.specs.version};type:=endorsed;export:=true</library>
+                        <library>mvn:org.apache.servicemix.bundles/org.apache.servicemix.bundles.xalan/${xalanServicemixVersion};type:=endorsed;export:=true</library>
+                        <library>mvn:org.apache.servicemix.bundles/org.apache.servicemix.bundles.xalan-serializer/${xalanSerializerServicemixVersion};type:=endorsed;export:=true</library>
+                        <library>mvn:javax.annotation/javax.annotation-api/${javaxAnnotationApiVersion};type:=endorsed;export:=true</library>
+
+                        <library>mvn:org.apache.servicemix.specs/org.apache.servicemix.specs.activator/${karaf.servicemix.specs.version};type:=default;export:=true</library>
+                        <library>mvn:org.apache.servicemix.specs/org.apache.servicemix.specs.locator/${karaf.servicemix.specs.version};type:=default;export:=true</library>
+
+                        <!-- OPENNMS: Add JNA bundles to prevent jline from refreshing (KARAF-5251) -->
+                        <library>mvn:net.java.dev.jna/jna/${jnaVersion};type:=boot;export:=false</library>
+                        <library>mvn:net.java.dev.jna/jna-platform/${jnaVersion};type:=boot;export:=false</library>
+
+                        <!-- OPENNMS: Add MINA bundles to prevent mina-sshd-core from refreshing (KARAF-5384) -->
+                        <library>mvn:org.apache.mina/mina-core/${minaVersion};type:=boot;export:=false</library>
+
+                        <!-- OPENNMS: Add our custom branding JAR -->
+                        <library>mvn:org.opennms.container/org.opennms.container.branding/${project.version};type:=default;export:=true</library>
+                    </libraries>
+                    <javase>11</javase>
+                    <featuresProcessing>${project.build.directory}/internal/features-processing.xml</featuresProcessing>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-overrides</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.opennms.karaf</groupId>
+                                    <artifactId>opennms</artifactId>
+                                    <version>${project.version}</version>
+                                    <classifier>overrides</classifier>
+                                    <type>properties</type>
+                                    <outputDirectory>${project.build.directory}/assembly/etc</outputDirectory>
+                                    <destFileName>overrides.properties</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <!-- NMS-20061: Karaf's own feature repo pins jline 3.21.0 (CVE-2026-56740);
+                         force jlineVersion (see root pom.xml) instead of reverting this. -->
+                    <execution>
+                        <id>remove-superseded-jline</id>
+                        <phase>prepare-package</phase>
+                        <goals><goal>run</goal></goals>
+                        <configuration>
+                            <target>
+                                <delete includeemptydirs="true">
+                                    <fileset dir="${project.build.directory}/assembly/system/org/jline/jline"
+                                             excludes="${jlineVersion}/**"/>
+                                </delete>
+                                <replaceregexp match="jline[/\\]jline[/\\][^/\\]+([/\\])jline-[^/\\]+\.jar"
+                                               replace="jline\1jline\1${jlineVersion}\1jline-${jlineVersion}.jar"
+                                               flags="g">
+                                    <fileset dir="${project.build.directory}/assembly/bin"
+                                             includes="client,client.bat,shell,shell.bat,instance,instance.bat"/>
+                                </replaceregexp>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>remove-superseded-pax-logging</id>
+                        <phase>prepare-package</phase>
+                        <goals><goal>run</goal></goals>
+                        <configuration>
+                            <target>
+                                <delete includeemptydirs="true">
+                                    <fileset dir="${project.build.directory}/assembly/system/org/ops4j/pax/logging/pax-logging-api"
+                                             excludes="${paxLoggingVersion}/**"/>
+                                    <fileset dir="${project.build.directory}/assembly/system/org/ops4j/pax/logging/pax-logging-log4j2"
+                                             excludes="${paxLoggingVersion}/**"/>
+                                    <fileset dir="${project.build.directory}/assembly/system/org/ops4j/pax/logging/pax-logging-logback"
+                                             excludes="${paxLoggingVersion}/**"/>
+                                </delete>
+                                <replaceregexp match="pax-logging-api[/\\][^/\\]+([/\\])pax-logging-api-[^/\\]+\.jar"
+                                               replace="pax-logging-api\1${paxLoggingVersion}\1pax-logging-api-${paxLoggingVersion}.jar"
+                                               flags="g">
+                                    <fileset dir="${project.build.directory}/assembly/bin"
+                                             includes="client,client.bat,shell,shell.bat,instance,instance.bat"/>
+                                </replaceregexp>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <!-- The pax-url-aether uber-bundle that Karaf's framework feature puts
+                             into system/ shades a plexus-utils affected by CVE-2025-67030.
+                             Replace it with the rebuilt one from
+                             container/pax-url-aether-patch. The "compile" phase is after
+                             karaf:assembly (process-resources) has written system/ and before
+                             both the checksums (prepare-package) and karaf:archive
+                             (package). -->
+                        <id>replace-vulnerable-pax-url-aether</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <overWriteReleases>true</overWriteReleases>
+                            <overWriteSnapshots>true</overWriteSnapshots>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.opennms.container</groupId>
+                                    <artifactId>org.opennms.container.pax-url-aether-patch</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>jar</type>
+                                    <outputDirectory>${project.build.directory}/assembly/system/org/ops4j/pax/url/pax-url-aether/${paxUrlAetherVersion}</outputDirectory>
+                                    <destFileName>pax-url-aether-${paxUrlAetherVersion}.jar</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- NMS-19841 (filed upstream as apache/karaf#2808):
+                             org.apache.karaf.features.core's SimpleDownloadTask stages
+                             wrap:/blueprint:/spring: bundle URLs (e.g.
+                             wrap:mvn:.../protobuf-java/...) via an unsynchronized
+                             delete-then-renameTo, so two overlapping resolutions of the
+                             same URL can delete the file out from under a reader that is
+                             mid-open, raising FileNotFoundException at runtime. Replace it
+                             with the patched jar from container/karaf-features-core-patch,
+                             built the same way as the pax-url-aether replacement above. -->
+                        <id>replace-racy-karaf-features-core</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <overWriteReleases>true</overWriteReleases>
+                            <overWriteSnapshots>true</overWriteSnapshots>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.opennms.container</groupId>
+                                    <artifactId>org.opennms.container.karaf-features-core-patch</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>jar</type>
+                                    <outputDirectory>${project.build.directory}/assembly/system/org/apache/karaf/features/org.apache.karaf.features.core/${karafVersion}</outputDirectory>
+                                    <destFileName>org.apache.karaf.features.core-${karafVersion}.jar</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>net.nicoulaj.maven.plugins</groupId>
+                <artifactId>checksum-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>prepare-package</phase>
+                        <goals><goal>files</goal></goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <algorithms><algorithm>SHA-1</algorithm></algorithms>
+                    <fileSets>
+                        <fileSet>
+                            <directory>${project.build.directory}/assembly/system</directory>
+                            <includes>
+                                <include>**/*.jar</include>
+                                <include>**/*.pom</include>
+                                <include>**/*.war</include>
+                                <include>**/*.xml</include>
+                            </includes>
+                        </fileSet>
+                    </fileSets>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>cleanup-after-integration-tests</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                        <configuration>
+                            <excludeDefaultDirectories>true</excludeDefaultDirectories>
+                            <filesets>
+                                <fileset>
+                                    <directory>${project.build.directory}/assembly</directory>
+                                </fileset>
+                            </filesets>
+                            <overrideUid>0</overrideUid>
+                            <overrideGid>0</overrideGid>
+                            <tarLongFileMode>posix</tarLongFileMode>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.karaf.features</groupId>
+            <artifactId>framework</artifactId>
+            <version>${karafVersion}</version>
+            <type>kar</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.xml.bind</groupId>
+                    <artifactId>jaxb-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>xml-apis</groupId>
+                    <artifactId>xml-apis</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!--
+            This is the original version of mvn:org.opennms.karaf/opennms//xml/standard so it
+            shouldn't be necessary but the karaf-maven-plugin doesn't resolve the bootFeatures
+            without it. The plugin looks at the classifier and scope when it does its magic so
+            something about mvn:org.opennms.karaf/opennms//xml/standard doesn't line up like
+            the original one does.
+        -->
+        <dependency>
+            <groupId>org.apache.karaf.features</groupId>
+            <artifactId>standard</artifactId>
+            <version>${karafVersion}</version>
+            <classifier>features</classifier>
+            <type>xml</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.xml.bind</groupId>
+                    <artifactId>jaxb-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>xml-apis</groupId>
+                    <artifactId>xml-apis</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.opennms.karaf</groupId>
+            <artifactId>opennms</artifactId>
+            <version>${project.version}</version>
+            <classifier>spring-legacy</classifier>
+            <type>xml</type>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.opennms.karaf</groupId>
+            <artifactId>opennms</artifactId>
+            <version>${project.version}</version>
+            <classifier>features</classifier>
+            <type>xml</type>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.opennms.karaf</groupId>
+            <artifactId>opennms</artifactId>
+            <version>${project.version}</version>
+            <classifier>minion</classifier>
+            <type>xml</type>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.opennms.dependencies</groupId>
+            <artifactId>felix-dependencies</artifactId>
+            <version>${project.version}</version>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.opennms.container</groupId>
+            <artifactId>org.opennms.container.branding</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.opennms.dependencies</groupId>
+            <artifactId>spring-dependencies</artifactId>
+            <version>${project.version}</version>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

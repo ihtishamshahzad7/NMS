@@ -1,0 +1,109 @@
+<jasperReport name="DiskUsageForCTXServer_subreport1" language="java" pageWidth="555" pageHeight="802" whenNoDataType="NoDataSection" columnWidth="555" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="59dc74f3-5a5f-4957-94c9-288eacb7b951">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<template><![CDATA[$P{ONMS_REPORT_DIR} + "/assets/styles/defaultStyles.jrtx"]]></template>
+	<style name="Table_Header" hTextAlign="Center" vTextAlign="Middle" hImageAlign="Center" vImageAlign="Middle" bold="true" italic="false" underline="false" strikeThrough="false"/>
+	<style name="Table_Body" hTextAlign="Center" vTextAlign="Middle" hImageAlign="Center" vImageAlign="Middle" bold="false" italic="false" underline="false" strikeThrough="false"/>
+	<parameter name="ONMS_REPORT_DIR" class="java.lang.String">
+		<description><![CDATA[The directory where all reports can be found]]></description>
+		<defaultValueExpression><![CDATA["${install.dir}/etc/report-templates"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="MEASUREMENT_URL" class="java.lang.String"/>
+	<parameter name="MEASUREMENT_USERNAME" class="java.lang.String"/>
+	<parameter name="MEASUREMENT_PASSWORD" class="java.lang.String"/>
+	<parameter name="nodeid" class="java.lang.Integer"/>
+	<parameter name="foreignsource" class="java.lang.String"/>
+	<parameter name="foreignid" class="java.lang.String"/>
+	<parameter name="startDate" class="java.util.Date"/>
+	<parameter name="endDate" class="java.util.Date"/>
+	<parameter name="nodeResourceDescriptor" forPrompting="false" class="java.lang.String">
+		<defaultValueExpression><![CDATA[org.opennms.netmgt.jasper.helper.MeasurementsHelper.getNodeOrNodeSourceDescriptor(String.valueOf($P{nodeid}), $P{foreignsource}, $P{foreignid})]]></defaultValueExpression>
+	</parameter>
+	<parameter name="startDateTime" forPrompting="false" class="java.lang.Long">
+		<defaultValueExpression><![CDATA[$P{startDate}.getTime()]]></defaultValueExpression>
+	</parameter>
+	<parameter name="endDateTime" forPrompting="false" class="java.lang.Long">
+		<defaultValueExpression><![CDATA[$P{endDate}.getTime()]]></defaultValueExpression>
+	</parameter>
+	<query language="Measurement"><![CDATA[<query-request step="300000" start="$P{startDateTime}" end="$P{endDateTime}" maxrows="2000">
+  <source aggregation="AVERAGE" label="total" attribute="hrStorageSize" transient="true" resourceId="$P{nodeResourceDescriptor}.hrStorageIndex[C]"/>
+  <source aggregation="AVERAGE" label="used" attribute="hrStorageUsed" transient="true" resourceId="$P{nodeResourceDescriptor}.hrStorageIndex[C]"/>
+  <source aggregation="AVERAGE" label="units" attribute="hrStorageAllocUnits" transient="false" resourceId="$P{nodeResourceDescriptor}.hrStorageIndex[C]"/>
+  <expression transient="false" label="dskTotal">total * units</expression>
+  <expression transient="false" label="dskUsed">used * units</expression>
+</query-request>]]></query>
+	<field name="timestamp" class="java.util.Date">
+		<description><![CDATA[]]></description>
+	</field>
+	<field name="step" class="java.lang.Long"/>
+	<field name="dskTotal" class="java.lang.Double">
+		<description><![CDATA[]]></description>
+	</field>
+	<field name="dskUsed" class="java.lang.Double"/>
+	<field name="units" class="java.lang.Double"/>
+	<variable name="used_AVG" calculation="Average" class="java.lang.Double">
+		<expression><![CDATA[$F{dskUsed}]]></expression>
+	</variable>
+	<variable name="total_AVG" calculation="Average" class="java.lang.Double">
+		<expression><![CDATA[$F{dskTotal}]]></expression>
+	</variable>
+	<variable name="free_AVG" class="java.lang.Double">
+		<expression><![CDATA[$F{dskTotal}-$F{dskUsed}]]></expression>
+	</variable>
+	<filterExpression><![CDATA[!$F{dskUsed}.isNaN() && !$F{dskTotal}.isNaN() && !$F{units}.isNaN()]]></filterExpression>
+	<background splitType="Stretch"/>
+	<title splitType="Stretch"/>
+	<pageHeader splitType="Stretch"/>
+	<columnHeader splitType="Stretch"/>
+	<detail>
+		<band splitType="Stretch"/>
+	</detail>
+	<columnFooter splitType="Stretch"/>
+	<pageFooter splitType="Stretch"/>
+	<summary height="32" splitType="Stretch">
+		<element kind="textField" uuid="7d4af3af-5450-4727-acf4-2679da67ec3c" x="36" y="16" width="150" height="16" pattern="###0.00" style="Table_Body">
+			<expression><![CDATA[($V{used_AVG} > 1000000000 ? String.format("%10.2f", $V{used_AVG}/new Double("1073741824.0")) + " GB" : ($V{used_AVG} > 1000000 ? String.format("%10.2f", $V{used_AVG}/new Double("1048576.0")) + " MB" : String.format("%10.2f", $V{used_AVG}/new Double("1024.0")) + " KB"))
++ " / " +
+($V{total_AVG} > 1000000000 ? String.format("%10.2f", $V{total_AVG}/new Double("1073741824.0")) + " GB" : ($V{total_AVG} > 1000000 ? String.format("%10.2f", $V{total_AVG}/new Double("1048576.0")) + " MB" : String.format("%10.2f", $V{total_AVG}/new Double("1024.0")) + " KB"))]]></expression>
+		</element>
+		<element kind="textField" uuid="242a1792-0489-40c3-b866-59e0fc9837d6" x="186" y="16" width="73" height="16" pattern="###0.00" style="Table_Body">
+			<expression><![CDATA[String.format("%3.2f",($F{dskUsed}/$F{dskTotal} * 100))]]></expression>
+		</element>
+		<element kind="staticText" uuid="a27a526f-bff8-4dab-a597-04fa1fc128bd" x="36" y="0" width="150" height="16" style="Table_Header">
+			<text><![CDATA[Used / Total]]></text>
+		</element>
+		<element kind="staticText" uuid="342b1409-a01a-4b96-b211-c2828d6fe68a" x="186" y="0" width="73" height="16" style="Table_Header">
+			<text><![CDATA[% Used]]></text>
+		</element>
+		<element kind="chart" chartType="stackedBar" uuid="7a6cb2cc-2ca7-4fd2-96ff-fd835915b4bc" stretchType="ContainerHeight" x="259" y="16" width="250" height="16" showLegend="false">
+			<dataset kind="category">
+				<series>
+					<seriesExpression><![CDATA[""]]></seriesExpression>
+					<categoryExpression><![CDATA["% Used"]]></categoryExpression>
+					<valueExpression><![CDATA[($F{dskUsed}/$F{dskTotal})*100]]></valueExpression>
+				</series>
+			</dataset>
+			<plot orientation="Horizontal" valueAxisVerticalTickLabels="false" showTickLabels="false">
+				<rangeAxisMinValueExpression><![CDATA[0]]></rangeAxisMinValueExpression>
+				<rangeAxisMaxValueExpression><![CDATA[100]]></rangeAxisMaxValueExpression>
+				<itemLabel color="#000000" backgroundColor="#FFFFFF"/>
+				<seriesColor order="0" color="#FDB543"/>
+			</plot>
+		</element>
+	</summary>
+	<noData height="47">
+		<element kind="staticText" uuid="a9d0411a-2c5f-421f-80af-febe281a48af" x="149" y="13" width="226" height="20" fontSize="14.0" hTextAlign="Center">
+			<text><![CDATA[No data for this disk]]></text>
+		</element>
+	</noData>
+</jasperReport>

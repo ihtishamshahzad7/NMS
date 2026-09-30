@@ -1,0 +1,126 @@
+/*
+ * Licensed to The OpenNMS Group, Inc (TOG) under one or more
+ * contributor license agreements.  See the LICENSE.md file
+ * distributed with this work for additional information
+ * regarding copyright ownership.
+ *
+ * TOG licenses this file to You under the GNU Affero General
+ * Public License Version 3 (the "License") or (at your option)
+ * any later version.  You may not use this file except in
+ * compliance with the License.  You may obtain a copy of the
+ * License at:
+ *
+ *      https://www.gnu.org/licenses/agpl-3.0.txt
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied.  See the License for the specific
+ * language governing permissions and limitations under the
+ * License.
+ */
+package org.opennms.netmgt.provision.detector.wsman;
+
+import java.net.InetAddress;
+import java.util.Map;
+
+import org.opennms.core.wsman.WSManClientFactory;
+import org.opennms.core.wsman.utils.CachingWSManClientFactory;
+import org.opennms.netmgt.dao.WSManConfigDao;
+import org.opennms.netmgt.dao.api.NodeDao;
+import org.opennms.netmgt.dao.api.SessionUtils;
+import org.opennms.netmgt.model.OnmsNode;
+import org.opennms.netmgt.provision.DetectRequest;
+import org.opennms.netmgt.provision.DetectResults;
+import org.opennms.netmgt.provision.support.DetectRequestImpl;
+import org.opennms.netmgt.provision.support.GenericServiceDetectorFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+@Component
+public class WsManDetectorFactory extends GenericServiceDetectorFactory<WsManDetector> {
+    private static final Logger LOG = LoggerFactory.getLogger(WsManDetectorFactory.class);
+
+    private final WSManClientFactory m_factory = new CachingWSManClientFactory();
+
+    @Autowired
+    private WSManConfigDao m_wsmanConfigDao;
+
+    @Autowired
+    private NodeDao m_nodeDao;
+
+    @Autowired
+    private SessionUtils m_sessionUtils;
+
+    public WsManDetectorFactory() {
+        super(WsManDetector.class);
+    }
+
+    @Override
+    public WsManDetector createDetector(Map<String, String> properties) {
+        final WsManDetector detector = new WsManDetector();
+        setBeanProperties(detector, properties);
+        detector.setClientFactory(m_factory);
+        return detector;
+    }
+
+    @Override
+    public DetectRequest buildRequest(String location, InetAddress address, Integer port, Map<String, String> attributes) {
+        return new DetectRequestImpl(address, port, WsmanEndpointUtils.toMap(m_wsmanConfigDao.getEndpoint(address)));
+    }
+
+    /**
+     * Stores the product vendor and product version in the node assets table
+     * after the service was successfully detected.
+     */
+    @Override
+    public void afterDetect(DetectRequest request, DetectResults results, Integer nodeId) {
+        if (!results.isServiceDetected() || nodeId == null) {
+            return;
+        }
+
+        final boolean updateAssets = Boolean.parseBoolean(results.getServiceAttributes().getOrDefault(WsManDetector.UPDATE_ASSETS, "false"));
+        final String productVendor = results.getServiceAttributes().get(WsManDetector.PRODUCT_VENDOR);
+        final String productVersion = results.getServiceAttributes().get(WsManDetector.PRODUCT_VERSION);
+
+        if (!updateAssets) {
+            LOG.info("Asset updates disabled.");
+            return;
+        }
+
+        // This is a plain Blueprint bean (no <tx:annotation-driven/>) invoked from an async detector
+        // callback, so a Spring @Transactional here never took effect. Under Hibernate 5 the node
+        // update must run in an explicit committing transaction, or it is rejected in read-only
+        // FlushMode.MANUAL.
+        m_sessionUtils.withTransaction(() -> {
+            final OnmsNode node = m_nodeDao.get(nodeId);
+            if (node == null) {
+                LOG.warn("No node was found with id: {}", nodeId);
+                return null;
+            }
+
+            LOG.debug("Updating vendor and modelNumber assets on node[{}] with '{}' and '{}'",
+                    nodeId, productVendor, productVersion);
+            node.getAssetRecord().setVendor(productVendor);
+            node.getAssetRecord().setModelNumber(productVersion);
+            m_nodeDao.update(node);
+            return null;
+        });
+    }
+
+    /**
+     * Releases any clients the factory is holding on to. Called by the blueprint
+     * container when the bundle stops.
+     */
+    public void destroy() {
+        if (m_factory instanceof AutoCloseable) {
+            try {
+                ((AutoCloseable) m_factory).close();
+            } catch (Exception e) {
+                LOG.debug("Error closing WS-Man client factory", e);
+            }
+        }
+    }
+}

@@ -1,0 +1,383 @@
+/*
+ * Licensed to The OpenNMS Group, Inc (TOG) under one or more
+ * contributor license agreements.  See the LICENSE.md file
+ * distributed with this work for additional information
+ * regarding copyright ownership.
+ *
+ * TOG licenses this file to You under the GNU Affero General
+ * Public License Version 3 (the "License") or (at your option)
+ * any later version.  You may not use this file except in
+ * compliance with the License.  You may obtain a copy of the
+ * License at:
+ *
+ *      https://www.gnu.org/licenses/agpl-3.0.txt
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied.  See the License for the specific
+ * language governing permissions and limitations under the
+ * License.
+ */
+package org.opennms.netmgt.config.trapd;
+
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlRootElement;
+
+/**
+ * SNMPv3 User Configuration.
+ * 
+ * @version $Revision$ $Date$
+ */
+@XmlRootElement(name = "snmpv3-user")
+@XmlAccessorType(XmlAccessType.NONE)
+@SuppressWarnings("all") 
+public class Snmpv3User implements java.io.Serializable {
+	private static final long serialVersionUID = 61220221955256341L;
+
+    //--------------------------/
+    //- Class/Member Variables -/
+    //--------------------------/
+
+	/**
+     * Server-assigned, stable, opaque identifier for this SNMPv3 user. Used to
+     * correlate a user across config read/write cycles (e.g. when resolving masked
+     * credentials), since securityName is not guaranteed to be unique.
+     */
+	@XmlAttribute(name="id", required=false)
+    private String id;
+
+	/**
+     * SNMPv3 Application Engine ID
+     */
+	@XmlAttribute(name="engine-id", required=false)
+    private String engineId;
+
+    /**
+     * SNMPv3 Security Name (User Name)
+     */
+	@XmlAttribute(name="security-name", required=false)
+    private String securityName;
+
+    /**
+     * SNMPv3 Security Level (noAuthNoPriv, authNoPriv, authPriv)
+     */
+	@XmlAttribute(name="security-level", required=false)
+    private Integer securityLevel;
+
+    /**
+     * SNMPv3 Authentication Protocol
+     */
+	@XmlAttribute(name="auth-protocol", required=false)
+    private String authProtocol;
+
+    /**
+     * SNMPv3 Authentication Password Phrase
+     */
+	@XmlAttribute(name="auth-passphrase", required=false)
+    private String authPassphrase;
+
+    /**
+     * SNMPv3 Privacy Protocol
+     */
+	@XmlAttribute(name="privacy-protocol", required=false)
+    private String privacyProtocol;
+
+    /**
+     * SNMPv3 Privacy Password Phrase
+     */
+	@XmlAttribute(name="privacy-passphrase", required=false)
+    private String privacyPassphrase;
+
+
+    //----------------/
+    //- Constructors -/
+    //----------------/
+
+    public Snmpv3User() {
+        super();
+    }
+
+    //-----------/
+    //- Methods -/
+    //-----------/
+
+    /**
+     * Overrides the Object.equals method.
+     * 
+     * @param obj
+     * @return true if the objects are equal.
+     */
+    @Override()
+    public boolean equals(final Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        
+        if (obj instanceof Snmpv3User) {
+            Snmpv3User temp = (Snmpv3User) obj;
+
+            if (this.engineId != null) {
+                if (temp.engineId == null) return false;
+                else if (!(this.engineId.equals(temp.engineId)))
+                    return false;
+            }
+            else if (temp.engineId != null)
+                return false;
+
+            if (this.securityName != null) {
+                if (temp.securityName == null) return false;
+                else if (!(this.securityName.equals(temp.securityName)))
+                    return false;
+            }
+            else if (temp.securityName != null)
+                return false;
+
+            if (this.securityLevel != temp.securityLevel)
+                return false;
+
+            if (this.authProtocol != null) {
+                if (temp.authProtocol == null) return false;
+                else if (!(this.authProtocol.equals(temp.authProtocol)))
+                    return false;
+            }
+            else if (temp.authProtocol != null)
+                return false;
+            if (this.authPassphrase != null) {
+                if (temp.authPassphrase == null) return false;
+                else if (!(this.authPassphrase.equals(temp.authPassphrase)))
+                    return false;
+            }
+            else if (temp.authPassphrase != null)
+                return false;
+            if (this.privacyProtocol != null) {
+                if (temp.privacyProtocol == null) return false;
+                else if (!(this.privacyProtocol.equals(temp.privacyProtocol)))
+                    return false;
+            }
+            else if (temp.privacyProtocol != null)
+                return false;
+            if (this.privacyPassphrase != null) {
+                if (temp.privacyPassphrase == null) return false;
+                else if (!(this.privacyPassphrase.equals(temp.privacyPassphrase)))
+                    return false;
+            }
+            else if (temp.privacyPassphrase != null)
+                return false;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns the value of field 'authPassphrase'. The field
+     * 'authPassphrase' has the following description: SNMPv3
+     * Authentication Password Phrase
+     * 
+     * @return the value of field 'AuthPassphrase'.
+     */
+    public String getAuthPassphrase() {
+        return this.authPassphrase;
+    }
+
+    /**
+     * Returns the value of field 'authProtocol'. The field
+     * 'authProtocol' has the following description: SNMPv3
+     * Authentication Protocol
+     * 
+     * @return the value of field 'AuthProtocol'.
+     */
+    public String getAuthProtocol() {
+        return this.authProtocol;
+    }
+
+    /**
+     * Returns the value of field 'id'. The field 'id' is a
+     * server-assigned, stable, opaque identifier for this SNMPv3 user.
+     *
+     * @return the value of field 'Id'.
+     */
+    public String getId() {
+        return this.id;
+    }
+
+    /**
+     * Returns the value of field 'engineId'. The field 'engineId'
+     * has the following description: SNMPv3 Application Engine ID
+     *
+     * @return the value of field 'EngineId'.
+     */
+    public String getEngineId() {
+        return this.engineId;
+    }
+
+    /**
+     * Returns the value of field 'privacyPassphrase'. The field
+     * 'privacyPassphrase' has the following description: SNMPv3
+     * Privacy Password Phrase
+     * 
+     * @return the value of field 'PrivacyPassphrase'.
+     */
+    public String getPrivacyPassphrase() {
+        return this.privacyPassphrase;
+    }
+
+    /**
+     * Returns the value of field 'privacyProtocol'. The field
+     * 'privacyProtocol' has the following description: SNMPv3
+     * Privacy Protocol
+     * 
+     * @return the value of field 'PrivacyProtocol'.
+     */
+    public String getPrivacyProtocol() {
+        return this.privacyProtocol;
+    }
+
+    /**
+     * Returns the value of field 'securityLevel'. The field
+     * 'securityLevel' has the following description: SNMPv3
+     * Security Level (noAuthNoPriv, authNoPriv, authPriv)
+     * 
+     * @return the value of field 'SecurityLevel'.
+     */
+    public Integer getSecurityLevel() {
+        return this.securityLevel;
+
+        //return this._securityLevel == null ? 0 : this._securityLevel;
+    }
+
+    /**
+     * Returns the value of field 'securityName'. The field
+     * 'securityName' has the following description: SNMPv3
+     * Security Name (User Name)
+     * 
+     * @return the value of field 'SecurityName'.
+     */
+    public String getSecurityName() {
+        return this.securityName;
+    }
+
+    /**
+     * Overrides the Object.hashCode method.
+     * <p>
+     * The following steps came from <b>Effective Java Programming
+     * Language Guide</b> by Joshua Bloch, Chapter 3
+     * 
+     * @return a hash code value for the object.
+     */
+    public int hashCode() {
+        int result = 17;
+        long tmp;
+
+        if (engineId != null) {
+           result = 37 * result + engineId.hashCode();
+        }
+        if (securityName != null) {
+           result = 37 * result + securityName.hashCode();
+        }
+        result = 37 * result + (securityLevel == null ? 0 : securityLevel);
+        if (authProtocol != null) {
+           result = 37 * result + authProtocol.hashCode();
+        }
+        if (authPassphrase != null) {
+           result = 37 * result + authPassphrase.hashCode();
+        }
+        if (privacyProtocol != null) {
+           result = 37 * result + privacyProtocol.hashCode();
+        }
+        if (privacyPassphrase != null) {
+           result = 37 * result + privacyPassphrase.hashCode();
+        }
+        
+        return result;
+    }
+
+    /**
+     * Sets the value of field 'authPassphrase'. The field
+     * 'authPassphrase' has the following description: SNMPv3
+     * Authentication Password Phrase
+     * 
+     * @param authPassphrase the value of field 'authPassphrase'.
+     */
+    public void setAuthPassphrase(final String authPassphrase) {
+        this.authPassphrase = authPassphrase;
+    }
+
+    /**
+     * Sets the value of field 'authProtocol'. The field
+     * 'authProtocol' has the following description: SNMPv3
+     * Authentication Protocol
+     * 
+     * @param authProtocol the value of field 'authProtocol'.
+     */
+    public void setAuthProtocol(final String authProtocol) {
+        this.authProtocol = authProtocol;
+    }
+
+    /**
+     * Sets the value of field 'id'. The field 'id' is a server-assigned,
+     * stable, opaque identifier for this SNMPv3 user.
+     *
+     * @param id the value of field 'id'.
+     */
+    public void setId(final String id) {
+        this.id = id;
+    }
+
+    /**
+     * Sets the value of field 'engineId'. The field 'engineId' has
+     * the following description: SNMPv3 Application Engine ID
+     *
+     * @param engineId the value of field 'engineId'.
+     */
+    public void setEngineId(final String engineId) {
+        this.engineId = engineId;
+    }
+
+    /**
+     * Sets the value of field 'privacyPassphrase'. The field
+     * 'privacyPassphrase' has the following description: SNMPv3
+     * Privacy Password Phrase
+     * 
+     * @param privacyPassphrase the value of field
+     * 'privacyPassphrase'.
+     */
+    public void setPrivacyPassphrase(final String privacyPassphrase) {
+        this.privacyPassphrase = privacyPassphrase;
+    }
+
+    /**
+     * Sets the value of field 'privacyProtocol'. The field
+     * 'privacyProtocol' has the following description: SNMPv3
+     * Privacy Protocol
+     * 
+     * @param privacyProtocol the value of field 'privacyProtocol'.
+     */
+    public void setPrivacyProtocol(final String privacyProtocol) {
+        this.privacyProtocol = privacyProtocol;
+    }
+
+    /**
+     * Sets the value of field 'securityLevel'. The field
+     * 'securityLevel' has the following description: SNMPv3
+     * Security Level (noAuthNoPriv, authNoPriv, authPriv)
+     * 
+     * @param securityLevel the value of field 'securityLevel'.
+     */
+    public void setSecurityLevel(final Integer securityLevel) {
+        this.securityLevel = securityLevel;
+    }
+
+    /**
+     * Sets the value of field 'securityName'. The field
+     * 'securityName' has the following description: SNMPv3
+     * Security Name (User Name)
+     * 
+     * @param securityName the value of field 'securityName'.
+     */
+    public void setSecurityName(final String securityName) {
+        this.securityName = securityName;
+    }
+}

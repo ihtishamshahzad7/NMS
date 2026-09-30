@@ -1,0 +1,129 @@
+@import "tailwindcss";
+
+/* =========================================================================
+ * Brand tokens — single source of truth for rebranding.
+ * Change these values only; every screen reads from them, nothing is
+ * hardcoded per-page. Swap name/logo in lib/brand.ts alongside these.
+ * ========================================================================= */
+:root {
+  /* Core surface layers (dark, modern NOC look) */
+  --bg-canvas: #0b0e14;
+  --bg-page: #10141c;
+  --bg-surface: #161b26;
+  --bg-surface-raised: #1c2230;
+  --border-subtle: #232a3b;
+  --border-strong: #2e3648;
+
+  /* Brand accent — swap these two to re-theme the entire app */
+  --accent: #3e8fff;
+  --accent-strong: #1c5fd1;
+  --accent-soft: rgba(62, 143, 255, 0.12);
+
+  /* Status colors — consistent across every widget/table/badge */
+  --status-up: #22c55e;
+  --status-down: #ef4444;
+  --status-warning: #f59e0b;
+  --status-unknown: #6b7280;
+
+  /* Text */
+  --text-primary: #e6e9f0;
+  --text-secondary: #9aa4b8;
+  --text-muted: #6b7385;
+
+  /* Radii / motion */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@theme inline {
+  --color-background: var(--bg-canvas);
+  --color-foreground: var(--text-primary);
+}
+
+* {
+  border-color: var(--border-subtle);
+}
+
+html,
+body {
+  height: 100%;
+  background: var(--bg-canvas);
+  color: var(--text-primary);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Ambient gradient wash — the "dynamic modern" look: soft radial glows
+   using the brand accent, sitting behind every screen. */
+.app-shell {
+  min-height: 100vh;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, var(--accent-soft), transparent 60%),
+    radial-gradient(900px 500px at 110% 10%, rgba(62, 143, 255, 0.06), transparent 55%),
+    var(--bg-canvas);
+}
+
+.glass-card {
+  background: linear-gradient(180deg, var(--bg-surface), var(--bg-page));
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.02) inset, 0 12px 30px -18px rgba(0, 0, 0, 0.6);
+  transition: border-color 0.2s var(--ease-out);
+}
+
+.glass-card:hover {
+  border-color: var(--border-strong);
+}
+
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.tbl th {
+  text-align: left;
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.tbl td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.tbl tr:hover td {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+.pulse-down {
+  animation: pulse-ring 1.8s var(--ease-out) infinite;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+}

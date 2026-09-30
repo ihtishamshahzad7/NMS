@@ -1,0 +1,90 @@
+
+= Scheduled Outages
+
+== GETs (reading data)
+
+[caption=]
+.Scheduled Outages API GET functions
+[options="autowidth"]
+|===
+| Parameter | Description
+
+| /sched-outages
+| Get a list of configured scheduled outages.
+
+| /sched-outages/\{outagename}
+| Get the details of a specific outage.
+
+| /sched-outages/\{outagename}/nodeInOutage/\{nodeId}
+| Check whether the node with the given ID is currently in outage for the named scheduled outage.
+Returns `true` or `false` as plain text.
+
+| /sched-outages/\{outagename}/interfaceInOutage/\{ipAddr}
+| Check whether the interface with the given IP address is currently in outage for the named scheduled outage.
+Returns `true` or `false` as plain text.
+
+| /sched-outages/nodeInOutage/\{nodeId}
+| Check whether the node with the given ID is currently in outage for any scheduled outage.
+Returns `true` or `false` as plain text.
+
+| /sched-outages/interfaceInOutage/\{ipAddr}
+| Check whether the interface with the given IP address is currently in outage for any scheduled outage.
+Returns `true` or `false` as plain text.
+|===
+
+== POST (setting data)
+
+[caption=]
+.Scheduled Outages API POST function
+[options="autowidth"]
+|===
+| Parameter | Description
+
+| /sched-outages
+| Add a new outage (or update an existing one).
+|===
+
+== PUTs (modifying data)
+
+[caption=]
+.Scheduled Outages API PUT functions
+[options="autowidth"]
+|===
+| Parameter | Description
+
+| /sched-outages/\{outagename}/collectd/\{package}
+| Add a specific outage to a collectd package.
+
+| /sched-outages/\{outagename}/pollerd/\{package}
+| Add a specific outage to a pollerd package.
+
+| /sched-outages/\{outagename}/threshd/\{package}
+| Add a specific outage to a threshd package.
+
+| /sched-outages/\{outagename}/notifd
+| Add a specific outage to the notifications.
+|===
+
+== DELETEs (removing data)
+
+[caption=]
+.Scheduled Outages API DELETE functions
+[options="autowidth"]
+|===
+| Parameter | Description
+
+| /sched-outages/\{outagename}
+| Delete a specific outage.
+
+| /sched-outages/\{outagename}/collectd/\{package}
+| Remove a specific outage from a collectd package.
+
+| /sched-outages/\{outagename}/pollerd/\{package}
+| Remove a specific outage from a pollerd package.
+
+| /sched-outages/\{outagename}/threshd/\{package}
+| Remove a specific outage from a threshd package.
+
+| /sched-outages/\{outagename}/notifd
+| Remove a specific outage from the notifications.
+|===
