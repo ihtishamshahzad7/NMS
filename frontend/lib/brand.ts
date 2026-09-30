@@ -51,6 +51,9 @@ export const NAV: NavGroup[] = [
   },
   {
     label: "Administration",
-    items: [{ label: "Users & Groups", href: "/users", icon: "Users" }],
+    items: [
+      { label: "Users & Groups", href: "/users", icon: "Users" },
+      { label: "Asset Management", href: "/assets", icon: "Boxes" },
+    ],
   },
 ];

@@ -15,6 +15,7 @@ import {
   PlusSquare,
   Bell,
   Users,
+  Boxes,
   LogOut,
   type LucideIcon,
 } from "lucide-react";
@@ -32,6 +33,7 @@ const ICONS: Record<string, LucideIcon> = {
   PlusSquare,
   Bell,
   Users,
+  Boxes,
 };
 
 export function Sidebar() {

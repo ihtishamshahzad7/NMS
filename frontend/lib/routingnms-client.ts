@@ -155,6 +155,22 @@ export type OnmsGroup = {
   userCount: number;
 };
 
+export type OnmsAsset = {
+  nodeId: number;
+  nodeLabel?: string;
+  category?: string;
+  manufacturer?: string;
+  modelNumber?: string;
+  serialNumber?: string;
+  assetNumber?: string;
+  region?: string;
+  building?: string;
+  room?: string;
+  rack?: string;
+  vendor?: string;
+  description?: string;
+};
+
 // ---- API surface ---------------------------------------------------------
 
 export const routingnms = {
@@ -365,6 +381,44 @@ export const routingnms = {
           ? ((g as Record<string, unknown>).user as unknown[]).length
           : 0,
       }));
+    } catch {
+      return [];
+    }
+  },
+
+  // Node inventory / asset records — classic "Asset Management" screen.
+  // The v1 REST API embeds an assetRecord object per node; schema has
+  // drifted across RoutingNMS versions, so every field is read defensively.
+  async listAssets(limit = 200): Promise<OnmsAsset[]> {
+    try {
+      const data = await requestV1<{ node?: Record<string, unknown>[] } | Record<string, unknown>[]>(
+        `/nodes?limit=${limit}`
+      );
+      const raw = Array.isArray(data) ? data : data.node ?? [];
+      return raw
+        .map((n) => {
+          const asset = (n.assetRecord ?? {}) as Record<string, unknown>;
+          const str = (v: unknown) => (typeof v === "string" && v.trim() !== "" ? v : undefined);
+          return {
+            nodeId: Number(n.id),
+            nodeLabel: str(n.label),
+            category: str(asset.category),
+            manufacturer: str(asset.manufacturer),
+            modelNumber: str(asset.modelNumber),
+            serialNumber: str(asset.serialNumber),
+            assetNumber: str(asset.assetNumber),
+            region: str(asset.region),
+            building: str(asset.building),
+            room: str(asset.room),
+            rack: str(asset.rack),
+            vendor: str(asset.vendor),
+            description: str(asset.description),
+          };
+        })
+        .filter(
+          (a) =>
+            a.manufacturer || a.modelNumber || a.serialNumber || a.assetNumber || a.region || a.building
+        );
     } catch {
       return [];
     }
