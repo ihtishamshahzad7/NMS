@@ -13,6 +13,8 @@ import {
   LineChart,
   Share2,
   PlusSquare,
+  Bell,
+  Users,
   LogOut,
   type LucideIcon,
 } from "lucide-react";
@@ -28,6 +30,8 @@ const ICONS: Record<string, LucideIcon> = {
   LineChart,
   Share2,
   PlusSquare,
+  Bell,
+  Users,
 };
 
 export function Sidebar() {

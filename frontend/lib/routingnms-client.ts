@@ -132,6 +132,29 @@ export type OnmsRequisition = {
   lastImport?: string | null;
 };
 
+export type OnmsNotification = {
+  id: number;
+  textMsg?: string;
+  subject?: string;
+  nodeLabel?: string;
+  pageTime?: string;
+  respondTime?: string | null;
+  respondUser?: string | null;
+};
+
+export type OnmsUser = {
+  userId: string;
+  fullName?: string;
+  email?: string;
+  comments?: string;
+};
+
+export type OnmsGroup = {
+  name: string;
+  comments?: string;
+  userCount: number;
+};
+
 // ---- API surface ---------------------------------------------------------
 
 export const routingnms = {
@@ -279,5 +302,71 @@ export const routingnms = {
       `/requisitions/${encodeURIComponent(foreignSource)}/import?rescanExisting=true`,
       { method: "PUT" }
     );
+  },
+
+  /** Notices sent to on-call users about alarms. Read defensively — same
+   * reasoning as listLinks/listRequisitions: the exact field names have
+   * drifted a bit across versions, never worth a hard crash over. */
+  async listNotifications(limit = 100): Promise<{ count: number; notifications: OnmsNotification[] }> {
+    try {
+      const data = await request<{
+        count: number;
+        totalCount: number;
+        notification: Record<string, unknown>[];
+      }>(`/notifications?limit=${limit}&orderBy=pageTime&order=desc`);
+      const raw = data.notification ?? [];
+      return {
+        count: data.totalCount ?? data.count ?? 0,
+        notifications: raw.map((n) => ({
+          id: Number(n.id),
+          textMsg: typeof n.textMsg === "string" ? n.textMsg : undefined,
+          subject: typeof n.subject === "string" ? n.subject : undefined,
+          nodeLabel: typeof n.nodeLabel === "string" ? n.nodeLabel : undefined,
+          pageTime: typeof n.pageTime === "string" ? n.pageTime : undefined,
+          respondTime: typeof n.respondTime === "string" ? n.respondTime : null,
+          respondUser: typeof n.respondUser === "string" ? n.respondUser : null,
+        })),
+      };
+    } catch {
+      return { count: 0, notifications: [] };
+    }
+  },
+
+  /** Configured users — admin/ops accounts, not monitored-device data.
+   * Reads defensively: the v1 users endpoint's schema varies by version. */
+  async listUsers(): Promise<OnmsUser[]> {
+    try {
+      const data = await requestV1<{ user?: Record<string, unknown>[] } | Record<string, unknown>[]>(
+        `/users`
+      );
+      const raw = Array.isArray(data) ? data : data.user ?? [];
+      return raw.map((u) => ({
+        userId: String(u["user-id"] ?? u.userId ?? u.username ?? "unknown"),
+        fullName: typeof u["full-name"] === "string" ? (u["full-name"] as string) : undefined,
+        email: typeof u.email === "string" ? (u.email as string) : undefined,
+        comments: typeof u.comments === "string" ? (u.comments as string) : undefined,
+      }));
+    } catch {
+      return [];
+    }
+  },
+
+  /** Configured groups — same defensive pattern. */
+  async listGroups(): Promise<OnmsGroup[]> {
+    try {
+      const data = await requestV1<{ group?: Record<string, unknown>[] } | Record<string, unknown>[]>(
+        `/groups`
+      );
+      const raw = Array.isArray(data) ? data : data.group ?? [];
+      return raw.map((g) => ({
+        name: String(g.name ?? "unnamed"),
+        comments: typeof g.comments === "string" ? (g.comments as string) : undefined,
+        userCount: Array.isArray((g as Record<string, unknown>).user)
+          ? ((g as Record<string, unknown>).user as unknown[]).length
+          : 0,
+      }));
+    } catch {
+      return [];
+    }
   },
 };

@@ -35,6 +35,7 @@ export const NAV: NavGroup[] = [
       { label: "Alarms", href: "/alarms", icon: "AlertTriangle" },
       { label: "Events", href: "/events", icon: "Activity" },
       { label: "Outages", href: "/outages", icon: "PlugZap" },
+      { label: "Notifications", href: "/notifications", icon: "Bell" },
     ],
   },
   {
@@ -47,5 +48,9 @@ export const NAV: NavGroup[] = [
       { label: "Topology", href: "/topology", icon: "Share2" },
       { label: "Provisioning", href: "/provisioning", icon: "PlusSquare" },
     ],
+  },
+  {
+    label: "Administration",
+    items: [{ label: "Users & Groups", href: "/users", icon: "Users" }],
   },
 ];
