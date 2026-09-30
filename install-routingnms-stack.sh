@@ -40,10 +40,10 @@ mkdir -p "$STACK_DIR/opennms-etc-overlay"
 
 # --- 3. DB password: reuse if this is a re-run, else generate ----------
 if [ -f "$DATASOURCES_FILE" ]; then
-  DB_PASSWORD="$(grep -m1 'name="opennms-admin"' -A0 "$DATASOURCES_FILE" | grep -o 'password="[^"]*"' | cut -d'"' -f2)"
+  DB_PASSWORD="$(grep -A5 'name="opennms-admin"' "$DATASOURCES_FILE" | grep -o 'password="[^"]*"' | head -1 | cut -d'"' -f2)"
   echo "-- Reusing existing DB password from previous install --"
 else
-  DB_PASSWORD="$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 24)"
+  DB_PASSWORD="$(openssl rand -hex 16)"
   echo "-- Generated new DB password --"
 fi
 
