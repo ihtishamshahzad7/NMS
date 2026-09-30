@@ -10,11 +10,18 @@
  * the base URL + credentials via env vars — see .env.example.
  */
 
+import { XMLParser } from "fast-xml-parser";
+
 const BASE_URL = process.env.ROUTINGNMS_API_URL ?? "http://localhost:8980/routingnms";
 const API_V2 = `${BASE_URL}/api/v2`;
 // The resource tree and the measurements query engine were never migrated
 // to v2 in upstream RoutingNMS — they're still served from the older v1 REST
 // API. Both live clients hit the same server, just a different path root.
+//
+// IMPORTANT: against the real deployed instance, v1 (`/rest/...`) replies
+// with XML by default — sending `Accept: application/json` does NOT change
+// this on this OpenNMS version. v2 (`/api/v2/...`) does honor it and really
+// returns JSON. So requestV1 below parses XML; request (v2) parses JSON.
 const API_V1 = `${BASE_URL}/rest`;
 
 function authHeader(): Record<string, string> {
@@ -25,11 +32,62 @@ function authHeader(): Record<string, string> {
   return { Authorization: `Basic ${token}` };
 }
 
-async function requestFrom<T>(root: string, path: string, init?: RequestInit): Promise<T> {
+// Tag names that must always come back as arrays even when the server
+// collapses a single-child collection to one bare element (standard XML
+// parser ambiguity — "one node" and "the node tag" look identical on the
+// wire). Every plural resource this client reads falls in here.
+const ALWAYS_ARRAY = new Set([
+  "node",
+  "alarm",
+  "event",
+  "outage",
+  "link",
+  "category",
+  "user",
+  "group",
+  "minion",
+  "businessService",
+  "business-service",
+  "report",
+  "notification",
+  "ipInterface",
+  "model-import",
+  "interface",
+  "resource",
+]);
+
+const xmlParser = new XMLParser({
+  ignoreAttributes: false,
+  attributeNamePrefix: "",
+  parseAttributeValue: false,
+  parseTagValue: false,
+  textNodeName: "#text",
+  // Must check isAttribute — several of these names (category, node, user)
+  // are also used as plain XML *attribute* names elsewhere (e.g. an asset
+  // record's `category="Production"`), and forcing those into arrays too
+  // silently corrupts unrelated fields.
+  isArray: (tagName, _jPath, _isLeafNode, isAttribute) => !isAttribute && ALWAYS_ARRAY.has(tagName),
+});
+
+/** Unwraps `{ rootTag: {...} }` down to `{...}` — the outer tag is just the
+ * XML document element and carries no meaning of its own (mirrors how the
+ * equivalent JSON body has no such wrapper). */
+function unwrapXmlRoot(parsed: Record<string, unknown>): unknown {
+  const keys = Object.keys(parsed).filter((k) => k !== "?xml");
+  if (keys.length !== 1) return parsed;
+  return parsed[keys[0]];
+}
+
+async function requestFrom<T>(
+  root: string,
+  path: string,
+  init: RequestInit | undefined,
+  format: "json" | "xml"
+): Promise<T> {
   const res = await fetch(`${root}${path}`, {
     ...init,
     headers: {
-      Accept: "application/json",
+      Accept: format === "xml" ? "application/xml, text/xml" : "application/json",
       "Content-Type": "application/json",
       ...authHeader(),
       ...(init?.headers ?? {}),
@@ -39,20 +97,31 @@ async function requestFrom<T>(root: string, path: string, init?: RequestInit): P
   });
 
   if (!res.ok) {
-    throw new Error(`RoutingNMS API ${path} failed: ${res.status} ${res.statusText}`);
+    // Try to surface the server's own error text (OpenNMS often replies with
+    // a short plaintext/XML message like "'name' must not be null") instead
+    // of just the status code — makes broken-endpoint diagnosis much faster.
+    const bodyText = await res.text().catch(() => "");
+    const detail = bodyText && bodyText.length < 300 ? ` — ${bodyText.trim()}` : "";
+    throw new Error(`RoutingNMS API ${path} failed: ${res.status} ${res.statusText}${detail}`);
   }
-  // Some endpoints (e.g. the import trigger) reply 200/204 with no body —
-  // res.json() throws on empty text, so only parse when there's content.
+
   const text = await res.text();
-  return (text ? JSON.parse(text) : undefined) as T;
+  if (!text) return undefined as T;
+
+  const trimmed = text.trimStart();
+  if (format === "xml" || trimmed.startsWith("<")) {
+    const parsed = xmlParser.parse(text) as Record<string, unknown>;
+    return unwrapXmlRoot(parsed) as T;
+  }
+  return JSON.parse(text) as T;
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  return requestFrom<T>(API_V2, path, init);
+  return requestFrom<T>(API_V2, path, init, "json");
 }
 
 async function requestV1<T>(path: string, init?: RequestInit): Promise<T> {
-  return requestFrom<T>(API_V1, path, init);
+  return requestFrom<T>(API_V1, path, init, "xml");
 }
 
 // ---- Types (trimmed to what the UI needs; RoutingNMS returns more) --------
@@ -399,7 +468,14 @@ export const routingnms = {
         userId: String(u["user-id"] ?? u.userId ?? u.username ?? "unknown"),
         fullName: typeof u["full-name"] === "string" ? (u["full-name"] as string) : undefined,
         email: typeof u.email === "string" ? (u.email as string) : undefined,
-        comments: typeof u.comments === "string" ? (u.comments as string) : undefined,
+        // The real instance's v1 XML uses <user-comments>, not <comments>
+        // (confirmed against a live curl) — read both, new field first.
+        comments:
+          typeof u["user-comments"] === "string"
+            ? (u["user-comments"] as string)
+            : typeof u.comments === "string"
+              ? (u.comments as string)
+              : undefined,
       }));
     } catch {
       return [];
@@ -491,11 +567,17 @@ export const routingnms = {
                 nodeLabel,
                 ipAddress: String(i.ipAddress ?? i["ip-address"] ?? "unknown"),
                 isPrimary:
-                  i.snmpPrimary === "P" || i["snmp-primary"] === "P" || i.isPrimary === true,
+                  i.snmpPrimary === "P" ||
+                  i["snmp-primary"] === "P" ||
+                  i.isPrimary === true ||
+                  i.isPrimary === "true",
                 snmpIfDescr: typeof snmp.ifDescr === "string" ? (snmp.ifDescr as string) : undefined,
                 snmpIfAlias: typeof snmp.ifAlias === "string" ? (snmp.ifAlias as string) : undefined,
+                // XML attribute values come back as strings, not numbers.
                 snmpIfOperStatus:
-                  typeof snmp.ifOperStatus === "number" ? (snmp.ifOperStatus as number) : undefined,
+                  snmp.ifOperStatus != null && !Number.isNaN(Number(snmp.ifOperStatus))
+                    ? Number(snmp.ifOperStatus)
+                    : undefined,
               };
             });
           } catch {
@@ -562,10 +644,26 @@ export const routingnms = {
   // REST flow (trigger a run, poll status, fetch the output) that we're
   // not wiring up yet — listing what's available is the useful first step.
   async listReportDefinitions(): Promise<OnmsReportDefinition[]> {
+    // The real instance 500s on `/reports/list` with `'name' must not be
+    // null` — that looks like a resource that wants a query param (e.g. a
+    // repository id) rather than a broken deployment, but without a working
+    // reference we can't be sure of the right one yet. Try the plain
+    // `/reports` catalog resource as a fallback before giving up.
+    let data: Record<string, unknown>[] | { report?: Record<string, unknown>[] };
     try {
-      const data = await requestV1<Record<string, unknown>[] | { report?: Record<string, unknown>[] }>(
+      data = await requestV1<Record<string, unknown>[] | { report?: Record<string, unknown>[] }>(
         `/reports/list`
       );
+    } catch {
+      try {
+        data = await requestV1<Record<string, unknown>[] | { report?: Record<string, unknown>[] }>(
+          `/reports`
+        );
+      } catch {
+        return [];
+      }
+    }
+    try {
       const raw = Array.isArray(data) ? data : data.report ?? [];
       return raw.map((r) => ({
         id: String(r.id ?? r.reportId ?? "unknown"),
@@ -669,11 +767,17 @@ export const routingnms = {
         return {
           nodeId,
           ipAddress: String(i.ipAddress ?? i["ip-address"] ?? "unknown"),
-          isPrimary: i.snmpPrimary === "P" || i["snmp-primary"] === "P" || i.isPrimary === true,
+          isPrimary:
+            i.snmpPrimary === "P" ||
+            i["snmp-primary"] === "P" ||
+            i.isPrimary === true ||
+            i.isPrimary === "true",
           snmpIfDescr: typeof snmp.ifDescr === "string" ? (snmp.ifDescr as string) : undefined,
           snmpIfAlias: typeof snmp.ifAlias === "string" ? (snmp.ifAlias as string) : undefined,
           snmpIfOperStatus:
-            typeof snmp.ifOperStatus === "number" ? (snmp.ifOperStatus as number) : undefined,
+            snmp.ifOperStatus != null && !Number.isNaN(Number(snmp.ifOperStatus))
+              ? Number(snmp.ifOperStatus)
+              : undefined,
         };
       });
     } catch {
