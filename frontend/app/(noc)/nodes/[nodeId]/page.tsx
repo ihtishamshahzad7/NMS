@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { TopBar } from "@/components/TopBar";
+import { SnmpConfigPanel } from "@/components/SnmpConfigPanel";
 import { routingnms } from "@/lib/routingnms-client";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,9 @@ export default async function NodeDetailPage({
     routingnms.nodeInterfaces(nodeId),
     routingnms.nodeAsset(nodeId),
   ]);
+
+  const primaryIp = interfaces.find((i) => i.isPrimary)?.ipAddress ?? interfaces[0]?.ipAddress;
+  const snmpConfig = primaryIp ? await routingnms.getSnmpConfig(primaryIp) : null;
 
   return (
     <>
@@ -124,6 +128,21 @@ export default async function NodeDetailPage({
             </tbody>
           </table>
         </div>
+
+        {primaryIp && (
+          <div className="glass-card overflow-hidden">
+            <div className="border-b px-5 py-4" style={{ borderColor: "var(--border-subtle)" }}>
+              <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                SNMP Configuration
+              </h2>
+            </div>
+            <SnmpConfigPanel
+              ip={primaryIp}
+              initialCommunity={snmpConfig?.community}
+              initialVersion={snmpConfig?.version}
+            />
+          </div>
+        )}
 
         <div className="glass-card overflow-hidden">
           <div

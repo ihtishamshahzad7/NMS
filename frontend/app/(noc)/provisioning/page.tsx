@@ -1,5 +1,6 @@
 import { TopBar } from "@/components/TopBar";
 import { ImportButton } from "@/components/ImportButton";
+import { AddDeviceForm } from "@/components/AddDeviceForm";
 import { routingnms } from "@/lib/routingnms-client";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +31,8 @@ export default async function ProvisioningPage() {
             {error}
           </div>
         )}
+
+        <AddDeviceForm defaultForeignSource={requisitions[0]?.foreignSource ?? "routingnms"} />
 
         <div className="glass-card overflow-hidden">
           <table className="tbl">

@@ -124,6 +124,38 @@ async function requestV1<T>(path: string, init?: RequestInit): Promise<T> {
   return requestFrom<T>(API_V1, path, init, "xml");
 }
 
+/** Escapes text for safe embedding in an XML attribute/text node. */
+function escapeXml(v: string): string {
+  return v
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/** Sends a raw XML body to the v1 REST API — used for the few write
+ * operations (provisioning, SNMP config) whose request schema is the
+ * long-stable `model-import`/`snmp-info` XML, safer to hand-build than to
+ * guess at an equivalent JSON mapping we haven't been able to verify live. */
+async function requestV1Xml(path: string, method: string, xmlBody?: string): Promise<string> {
+  const res = await fetch(`${API_V1}${path}`, {
+    method,
+    headers: {
+      "Content-Type": "application/xml",
+      Accept: "application/xml, text/xml",
+      ...authHeader(),
+    },
+    body: xmlBody,
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const bodyText = await res.text().catch(() => "");
+    const detail = bodyText && bodyText.length < 300 ? ` — ${bodyText.trim()}` : "";
+    throw new Error(`RoutingNMS API ${path} failed: ${res.status} ${res.statusText}${detail}`);
+  }
+  return res.text().catch(() => "");
+}
+
 // ---- Types (trimmed to what the UI needs; RoutingNMS returns more) --------
 
 export type OnmsNode = {
@@ -833,5 +865,74 @@ export const routingnms = {
   // same action the classic UI's "Acknowledge" link on a notice performs.
   async acknowledgeNotification(id: number): Promise<void> {
     await requestV1<void>(`/notifications/${id}?ack=true`, { method: "PUT" });
+  },
+
+  // ---- Provisioning: add a single device ------------------------------
+  // Builds the standard `model-import` requisition-node XML (unchanged
+  // across RoutingNMS/OpenNMS versions) and POSTs it to the requisition's
+  // /nodes collection — the same action the classic requisition editor's
+  // "Add Node" button performs. If the requisition (foreign source) doesn't
+  // exist yet, we create it empty first, then retry.
+  async addRequisitionNode(
+    foreignSource: string,
+    node: { foreignId: string; label: string; ip: string }
+  ): Promise<void> {
+    const nodeXml = `<node foreign-id="${escapeXml(node.foreignId)}" node-label="${escapeXml(
+      node.label
+    )}">` +
+      `<interface ip-addr="${escapeXml(node.ip)}" status="1" snmp-primary="P">` +
+      `<monitored-service service-name="ICMP"/>` +
+      `<monitored-service service-name="SNMP"/>` +
+      `</interface>` +
+      `</node>`;
+
+    try {
+      await requestV1Xml(`/requisitions/${encodeURIComponent(foreignSource)}/nodes`, "POST", nodeXml);
+    } catch {
+      // Most likely cause: the requisition itself doesn't exist yet. Create
+      // an empty one for this foreign source, then retry adding the node.
+      await requestV1Xml(
+        `/requisitions`,
+        "POST",
+        `<model-import foreign-source="${escapeXml(foreignSource)}"/>`
+      );
+      await requestV1Xml(`/requisitions/${encodeURIComponent(foreignSource)}/nodes`, "POST", nodeXml);
+    }
+  },
+
+  // ---- SNMP configuration (per-IP override) ---------------------------
+  // Backs the classic "Admin → Configure SNMP by IP" page. GET returns the
+  // effective config OpenNMS would use to poll that address today; PUT
+  // stores an override for it (used both when adding a new device with
+  // known SNMP details, and to fix one that's failing collection).
+  async getSnmpConfig(ip: string): Promise<{
+    community?: string;
+    version?: string;
+    port?: number;
+  } | null> {
+    try {
+      const data = await requestV1<Record<string, unknown>>(`/snmpConfig/${encodeURIComponent(ip)}`);
+      return {
+        community: typeof data.community === "string" ? data.community : undefined,
+        version: typeof data.version === "string" ? data.version : undefined,
+        port: data.port != null && !Number.isNaN(Number(data.port)) ? Number(data.port) : undefined,
+      };
+    } catch {
+      return null;
+    }
+  },
+
+  async setSnmpConfig(
+    ip: string,
+    cfg: { community: string; version?: string; port?: number }
+  ): Promise<void> {
+    const attrs = [
+      `community="${escapeXml(cfg.community)}"`,
+      cfg.version ? `version="${escapeXml(cfg.version)}"` : "",
+      cfg.port ? `port="${cfg.port}"` : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+    await requestV1Xml(`/snmpConfig/${encodeURIComponent(ip)}`, "PUT", `<snmp-info ${attrs}/>`);
   },
 };
