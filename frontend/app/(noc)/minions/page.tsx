@@ -4,19 +4,31 @@ import { routingnms } from "@/lib/routingnms-client";
 
 export const dynamic = "force-dynamic";
 
-export default async function ReportsPage() {
-  let reports: Awaited<ReturnType<typeof routingnms.listReportDefinitions>> = [];
+function statusColor(status?: string) {
+  switch ((status ?? "").toUpperCase()) {
+    case "STARTED":
+      return "var(--status-up)";
+    case "STOPPED":
+    case "UNRESPONSIVE":
+      return "var(--status-down)";
+    default:
+      return "var(--text-muted)";
+  }
+}
+
+export default async function MinionsPage() {
+  let minions: Awaited<ReturnType<typeof routingnms.listMinions>> = [];
   let error: string | null = null;
 
   try {
-    reports = await routingnms.listReportDefinitions();
+    minions = await routingnms.listMinions();
   } catch {
     error = "Couldn't reach the RoutingNMS API. Check ROUTINGNMS_API_URL / credentials.";
   }
 
   return (
     <>
-      <TopBar title="Reports" />
+      <TopBar title="Distributed Monitoring" />
       <div className="flex flex-col gap-6 p-6">
         {error && (
           <div className="glass-card p-4 text-sm" style={{ color: "var(--status-warning)" }}>
@@ -25,9 +37,9 @@ export default async function ReportsPage() {
         )}
 
         <FilterableTable
-          rows={reports}
-          searchFields={(r) => [r.displayName, r.id, r.description]}
-          placeholder="Filter reports…"
+          rows={minions}
+          searchFields={(m) => [m.label, m.id, m.location, m.status]}
+          placeholder="Filter minions…"
         >
           {(filtered) => (
             <div className="glass-card overflow-hidden">
@@ -36,43 +48,41 @@ export default async function ReportsPage() {
                 style={{ borderColor: "var(--border-subtle)" }}
               >
                 <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                  Report Catalog
+                  Minions
                 </h2>
                 <span
                   className="rounded-full px-2.5 py-1 text-xs font-medium"
                   style={{ background: "var(--accent-soft)", color: "var(--text-secondary)" }}
                 >
-                  {reports.length}
+                  {minions.length}
                 </span>
               </div>
               <table className="tbl">
                 <thead>
                   <tr>
-                    <th>Report</th>
-                    <th>Description</th>
-                    <th>Availability</th>
+                    <th>Minion</th>
+                    <th>Monitoring Location</th>
+                    <th>Status</th>
+                    <th>Last Seen</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.length === 0 && !error && (
                     <tr>
-                      <td colSpan={3} className="text-center" style={{ color: "var(--text-muted)" }}>
-                        {reports.length === 0
-                          ? "No report definitions found."
-                          : "No reports match that filter."}
+                      <td colSpan={4} className="text-center" style={{ color: "var(--text-muted)" }}>
+                        {minions.length === 0
+                          ? "No Minions deployed — this instance is monitoring directly."
+                          : "No minions match that filter."}
                       </td>
                     </tr>
                   )}
-                  {filtered.map((r) => (
-                    <tr key={r.id}>
-                      <td style={{ color: "var(--text-primary)" }}>{r.displayName ?? r.id}</td>
-                      <td style={{ color: "var(--text-secondary)" }}>{r.description ?? "—"}</td>
-                      <td
-                        style={{
-                          color: r.online === false ? "var(--text-muted)" : "var(--status-up)",
-                        }}
-                      >
-                        {r.online === false ? "Offline" : "Online"}
+                  {filtered.map((m) => (
+                    <tr key={m.id}>
+                      <td style={{ color: "var(--text-primary)" }}>{m.label ?? m.id}</td>
+                      <td style={{ color: "var(--text-secondary)" }}>{m.location ?? "—"}</td>
+                      <td style={{ color: statusColor(m.status) }}>{m.status ?? "Unknown"}</td>
+                      <td style={{ color: "var(--text-muted)" }}>
+                        {m.lastUpdated ? new Date(m.lastUpdated).toLocaleString() : "—"}
                       </td>
                     </tr>
                   ))}
@@ -81,12 +91,6 @@ export default async function ReportsPage() {
             </div>
           )}
         </FilterableTable>
-
-        <div className="glass-card p-4 text-xs" style={{ color: "var(--text-muted)" }}>
-          Running and downloading a rendered report isn&apos;t wired up yet — this is the
-          catalog view only. Ask to add on-demand report generation once this list is
-          confirmed against your instance.
-        </div>
       </div>
     </>
   );
