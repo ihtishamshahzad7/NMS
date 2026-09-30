@@ -1,0 +1,28 @@
+# Runs ONLY the RoutingNMS frontend as a container. It talks to your
+# existing OpenNMS/RoutingNMS backend container over the network — the
+# backend keeps running exactly as it does today, untouched.
+#
+# Usage:
+#   docker compose -f docker-compose.frontend.yml up -d --build
+#
+# Edit ROUTINGNMS_API_URL below first — see the deployment guide for how
+# to find your backend container's name/network.
+
+services:
+  routingnms-frontend:
+    build: .
+    container_name: routingnms-frontend
+    restart: unless-stopped
+    ports:
+      - "80:3000"   # public port : container port — change 80 if something else already listens there
+    environment:
+      ROUTINGNMS_API_URL: "http://opennms:8980/opennms"   # <-- point this at your backend container
+      ROUTINGNMS_API_USER: "admin"
+      ROUTINGNMS_API_PASSWORD: "admin"                     # <-- your real admin password
+      NODE_ENV: "production"
+    networks:
+      - routingnms-net
+
+networks:
+  routingnms-net:
+    external: true   # set to the network your existing backend container is already on (see guide, step 1)
